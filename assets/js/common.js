@@ -54,6 +54,33 @@
     osc.stop(t + o.dur + 0.05);
   }
 
+  // ضجيج مُرشَّح (لأصوات الهواء والهدير)
+  let noiseBuf = null;
+  function noise(o) {
+    const ac = audio();
+    if (!ac) return;
+    if (!noiseBuf) {
+      noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    const t = ac.currentTime + (o.at || 0);
+    const src = ac.createBufferSource();
+    src.buffer = noiseBuf;
+    src.loop = true;
+    const filter = ac.createBiquadFilter();
+    filter.type = o.type || 'bandpass';
+    filter.frequency.setValueAtTime(o.from, t);
+    filter.frequency.exponentialRampToValueAtTime(o.to || o.from, t + o.dur);
+    const gain = ac.createGain();
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(o.vol ?? 0.3, t + (o.attack || 0.05));
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + o.dur);
+    src.connect(filter).connect(gain).connect(ac.destination);
+    src.start(t);
+    src.stop(t + o.dur + 0.05);
+  }
+
   const sound = {
     enabled: store.get('sound', true),
     tick() { if (this.enabled) tone(1400, 0.04, 'square', 0.05); },
@@ -92,6 +119,23 @@
       });
       [1568, 2093].forEach((f, i) => play({ freq: f, dur: 1.8, type: 'sine', vol: 0.12, at: 1.75 + i * 0.05 }));
     },
+
+    // مؤثرات الأشكال التفاعلية
+    pop() { if (this.enabled) play({ freq: 900, endFreq: 260, dur: 0.1, type: 'sine', vol: 0.28 }); },
+    boing() {
+      if (!this.enabled) return;
+      play({ freq: 200, endFreq: 520, dur: 0.14, type: 'sine', vol: 0.25 });
+      play({ freq: 520, endFreq: 240, dur: 0.22, type: 'triangle', vol: 0.18, at: 0.1 });
+    },
+    whoosh() { if (this.enabled) noise({ dur: 0.6, type: 'bandpass', from: 300, to: 2600, vol: 0.35, attack: 0.15 }); },
+    rumble(dur) { if (this.enabled) noise({ dur: dur || 1.6, type: 'lowpass', from: 420, to: 90, vol: 0.7, attack: 0.25 }); },
+    clunk() {
+      if (!this.enabled) return;
+      play({ freq: 150, endFreq: 70, dur: 0.14, type: 'square', vol: 0.16, lowpass: 700 });
+      play({ freq: 1800, dur: 0.03, type: 'square', vol: 0.05 });
+    },
+    creak() { if (this.enabled) play({ freq: 95, endFreq: 190, dur: 0.8, type: 'sawtooth', vol: 0.09, lowpass: 900, attack: 0.1 }); },
+    thump() { if (this.enabled) play({ freq: 130, endFreq: 45, dur: 0.22, type: 'sine', vol: 0.55 }); },
 
     toggle() { this.enabled = !this.enabled; store.set('sound', this.enabled); return this.enabled; }
   };

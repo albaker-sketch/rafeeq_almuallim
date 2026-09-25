@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="../assets/css/main.css">
 <link rel="stylesheet" href="../assets/css/tool.css">
 <link rel="stylesheet" href="../assets/css/picker.css">
+<link rel="stylesheet" href="../assets/css/picker-fun.css">
 <style>
   .wheel-layout {
     display: grid;
@@ -259,6 +260,7 @@
     <aside class="side">
       <div class="panel">
         <h2>طريقة الاختيار</h2>
+        <div class="mode-groups" id="modeGroups" role="group" aria-label="نوع الأشكال"></div>
         <div class="modes" id="modes" role="group" aria-label="طريقة الاختيار"></div>
         <p class="mode-desc" id="modeDesc"></p>
         <div class="mode-opts" id="tickerOpts" hidden>
@@ -313,6 +315,7 @@
 <script src="../assets/js/common.js"></script>
 <script src="../assets/js/classes-store.js"></script>
 <script src="../assets/js/picker-modes.js"></script>
+<script src="../assets/js/picker-fun.js"></script>
 <script>
 (function () {
   const { store, sound, toggleFullscreen } = window.Rafeeq;
@@ -555,8 +558,12 @@
   let viewWinner = false;
   const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  let group = (Modes.list.find(m => m.id === mode) || {}).group || 'calm';
+
   function renderModeTiles() {
-    el('modes').innerHTML = Modes.list.map(m =>
+    el('modeGroups').innerHTML = Modes.groups.map(g =>
+      `<button type="button" data-group="${g.id}" aria-pressed="${g.id === group}">${g.name}</button>`).join('');
+    el('modes').innerHTML = Modes.list.filter(m => m.group === group).map(m =>
       `<button type="button" class="mode-tile" data-mode="${m.id}" aria-pressed="${m.id === mode}" title="${m.desc}">${m.icon}<span>${m.name}</span></button>`).join('');
   }
 
@@ -564,6 +571,7 @@
     return {
       names,
       labels: wheelLabels(names),
+      parts: names.map(nameParts),
       target,
       sound,
       randomInt,
@@ -725,6 +733,15 @@
   el('spinBtn').addEventListener('click', choose);
   canvas.addEventListener('click', spin);
   el('modes').addEventListener('click', e => { const b = e.target.closest('.mode-tile'); if (b) setMode(b.dataset.mode); });
+  el('modeGroups').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b || spinning) return;
+    group = b.dataset.group;
+    renderModeTiles();
+    // الانتقال لأول طريقة في المجموعة إن كانت الحالية من مجموعة أخرى
+    const cur = Modes.list.find(m => m.id === mode);
+    if (!cur || cur.group !== group) setMode(Modes.list.find(m => m.group === group).id);
+  });
   el('tickerDir').value = store.get('wheel:tickerDir', 'v');
   el('tickerDir').addEventListener('change', e => { store.set('wheel:tickerDir', e.target.value); viewWinner = false; renderView(); });
   window.addEventListener('resize', () => { if (!spinning && !viewWinner) renderView(); });
