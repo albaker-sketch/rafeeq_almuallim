@@ -228,6 +228,84 @@
   }
   .chip:hover { background: var(--surface-2); }
 
+  /* رسالة الانتهاء */
+  .end-msg {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    border-radius: inherit;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    backdrop-filter: blur(4px);
+  }
+  .end-card {
+    background: var(--surface);
+    border: 3px solid var(--danger);
+    border-radius: 28px;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, .22);
+    padding: clamp(24px, 4vw, 48px) clamp(24px, 6vw, 72px);
+    text-align: center;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    animation: endPop .5s cubic-bezier(.2, 1.5, .4, 1);
+  }
+  @keyframes endPop { from { transform: scale(.4) rotate(-4deg); opacity: 0; } }
+  .end-emoji {
+    font-size: clamp(4rem, 12vw, 8rem);
+    line-height: 1;
+    animation: endBounce 1s ease-in-out .5s 3;
+  }
+  @keyframes endBounce { 30% { transform: translateY(-14%) scale(1.08); } 60% { transform: translateY(0) scale(.97); } }
+  .end-text {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(2.6rem, 8vw, 6rem);
+    line-height: 1.15;
+    color: var(--danger);
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+  .stage:fullscreen .end-text,
+  .stage.pseudo-full .end-text { font-size: clamp(3rem, 10vw, 9rem); }
+  .stage:fullscreen .end-emoji,
+  .stage.pseudo-full .end-emoji { font-size: clamp(5rem, 15vw, 11rem); }
+  .end-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+
+  .msg-row { display: flex; gap: 8px; align-items: center; }
+  .msg-row input { flex: 1; }
+  .phrases, .emojis { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .phrase {
+    font: inherit;
+    font-size: .88rem;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .phrase:hover { background: var(--surface-2); }
+  .emoji-btn {
+    width: 42px;
+    height: 42px;
+    font-size: 1.4rem;
+    line-height: 1;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    cursor: pointer;
+  }
+  .emoji-btn.is-none { font-family: var(--font-body); font-size: .78rem; color: var(--muted); width: auto; padding-inline: 10px; }
+  .emoji-btn[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand); }
+  .msg-disabled { opacity: .45; pointer-events: none; }
+
   /* صوت المؤقت */
   .seg {
     display: grid;
@@ -388,6 +466,16 @@
           إضافة
         </button>
       </form>
+      <div class="end-msg" id="endMsg" hidden>
+        <div class="end-card" role="alertdialog" aria-labelledby="endText">
+          <div class="end-emoji" id="endEmoji" aria-hidden="true"></div>
+          <div class="end-text" id="endText" dir="auto"></div>
+          <div class="end-actions">
+            <button class="btn btn-primary btn-lg" type="button" id="endClose">إغلاق</button>
+            <button class="btn btn-ghost btn-lg" type="button" id="endRestart">تشغيل من جديد</button>
+          </div>
+        </div>
+      </div>
       <p class="kbd-hint">اختصار: <kbd>مسافة</kbd> تشغيل وإيقاف مؤقت، <kbd>R</kbd> إعادة، <kbd>S</kbd> إيقاف، <kbd>F</kbd> ملء الشاشة</p>
     </section>
 
@@ -439,11 +527,29 @@
         </div>
       </div>
 
+      <div class="panel" id="msgPanel">
+        <h2>رسالة الانتهاء</h2>
+        <label class="sound-check" style="margin-top:0">
+          <input type="checkbox" id="msgOn" checked>
+          إظهار رسالة على الشاشة عند انتهاء الوقت
+        </label>
+        <div id="msgFields" style="margin-top:12px">
+          <label class="field-label" for="msgText">العبارة (اختر من المقترحات أو اكتب عبارتك)</label>
+          <div class="msg-row">
+            <input type="text" id="msgText" maxlength="60" dir="auto">
+            <button class="btn btn-ghost" type="button" id="msgPreview" style="padding:8px 14px">معاينة</button>
+          </div>
+          <div class="phrases" id="phrases"></div>
+          <div class="field-label" style="margin-top:14px">إيموجي مع العبارة (اختياري)</div>
+          <div class="emojis" id="emojis" role="group" aria-label="اختيار إيموجي"></div>
+        </div>
+      </div>
+
       <div class="panel">
         <h2>اسم النشاط</h2>
         <label class="field-label" for="activityInput">يظهر أعلى المؤقت ليعرف الطلاب المطلوب.</label>
         <input type="text" id="activityInput" value="نشاط جماعي" maxlength="40">
-        <div class="chips" style="margin-top:10px">
+        <div class="chips" id="activityChips" style="margin-top:10px">
           <button class="chip" type="button">نشاط جماعي</button>
           <button class="chip" type="button">عمل فردي</button>
           <button class="chip" type="button">نقاش</button>
@@ -694,6 +800,54 @@
     if (wasPlaying) startTrack(true);
   }
 
+  // ---------- رسالة الانتهاء ----------
+  const PHRASES = [
+    { text: 'انتهى الوقت', emoji: '⏰' },
+    { text: 'خلاااااص انتهى الوقت!', emoji: '🛑' },
+    { text: 'Stop!', emoji: '✋' },
+    { text: 'ولا أحد يتحرك!', emoji: '🧊' },
+    { text: 'الأقلام فوق!', emoji: '✏️' },
+    { text: 'كل واحد في مكانه', emoji: '🪑' },
+    { text: 'هدوء من فضلكم', emoji: '🤫' },
+    { text: 'أحسنتم! انتهى النشاط', emoji: '👏' },
+    { text: 'حان وقت المشاركة', emoji: '🙋' },
+    { text: 'انتهت الاستراحة', emoji: '🔔' }
+  ];
+  const EMOJIS = ['⏰', '🛑', '✋', '🧊', '✏️', '🤫', '👏', '🙌', '🎉', '⭐', '🔔', '🙋', '🚦', '💡', '🏁'];
+
+  let msgEmoji = store.get('timer:msgEmoji', '⏰');
+
+  function escText(t) {
+    return String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  }
+
+  function renderMsgPanel() {
+    el('phrases').innerHTML = PHRASES.map((p, i) =>
+      `<button class="phrase" type="button" data-i="${i}" dir="auto">${escText(p.text)} ${p.emoji}</button>`).join('');
+    el('emojis').innerHTML = `<button class="emoji-btn is-none" type="button" data-e="" aria-pressed="${!msgEmoji}">بدون</button>` +
+      EMOJIS.map(e => `<button class="emoji-btn" type="button" data-e="${e}" aria-pressed="${e === msgEmoji}" aria-label="${e}">${e}</button>`).join('');
+    el('msgFields').classList.toggle('msg-disabled', !el('msgOn').checked);
+  }
+
+  function setEmoji(e) {
+    msgEmoji = e;
+    store.set('timer:msgEmoji', e);
+    document.querySelectorAll('.emoji-btn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.e === e)));
+  }
+
+  function showEndMsg() {
+    const text = el('msgText').value.trim() || 'انتهى الوقت';
+    el('endText').textContent = text;
+    el('endEmoji').textContent = msgEmoji;
+    el('endEmoji').hidden = !msgEmoji;
+    el('endMsg').hidden = false;
+    el('endClose').focus();
+  }
+
+  function hideEndMsg() {
+    el('endMsg').hidden = true;
+  }
+
   function onSecond(whole) {
     if (trackMode()) return; // مع الأنشودة لا نشغّل دقات التنبيه
     if (whole > URGENT_AT && whole <= WARN_AT) sound.tension(whole);
@@ -712,6 +866,7 @@
       finished = true;
       if (trackMode()) fadeOutTrack(() => { if (el('endChime').checked) sound.finish(); });
       else sound.finish();
+      if (el('msgOn').checked) showEndMsg();
       releaseWake();
       render();
       return;
@@ -721,6 +876,7 @@
   }
 
   function play() {
+    hideEndMsg();
     if (running) return;
     if (finished || remainingMs <= 0) { restart(); return; }
     const fromStart = state() === 'idle'; // الاستئناف يكمل المقطع من حيث توقف
@@ -748,6 +904,7 @@
 
   // إيقاف: ينهي الجولة ويعيد المؤقت إلى المدة المختارة دون تشغيل
   function stop() {
+    hideEndMsg();
     running = false;
     finished = false;
     cancelAnimationFrame(raf);
@@ -776,6 +933,7 @@
 
   function addTime(sec) {
     if (!(sec > 0)) return;
+    hideEndMsg();
     const ms = sec * 1000;
     if (running) {
       endAt += ms;
@@ -850,7 +1008,7 @@
     el('activityOut').textContent = e.target.value;
     store.set('timer:activity', e.target.value);
   });
-  document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => setActivity(c.textContent)));
+  document.querySelectorAll('#activityChips .chip').forEach(c => c.addEventListener('click', () => setActivity(c.textContent)));
 
   document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => setSoundMode(b.dataset.sound)));
   ['builtinList', 'uploadList'].forEach(listId => el(listId).addEventListener('click', async e => {
@@ -888,6 +1046,30 @@
   el('endChime').checked = store.get('timer:endChime', true);
   el('endChime').addEventListener('change', e => store.set('timer:endChime', e.target.checked));
 
+  el('msgText').value = store.get('timer:msgText', 'انتهى الوقت');
+  el('msgOn').checked = store.get('timer:msgOn', true);
+  el('msgText').addEventListener('input', e => store.set('timer:msgText', e.target.value));
+  el('msgOn').addEventListener('change', e => {
+    store.set('timer:msgOn', e.target.checked);
+    el('msgFields').classList.toggle('msg-disabled', !e.target.checked);
+  });
+  el('phrases').addEventListener('click', e => {
+    const b = e.target.closest('.phrase');
+    if (!b) return;
+    const p = PHRASES[Number(b.dataset.i)];
+    el('msgText').value = p.text;
+    store.set('timer:msgText', p.text);
+    setEmoji(p.emoji);
+  });
+  el('emojis').addEventListener('click', e => {
+    const b = e.target.closest('.emoji-btn');
+    if (b) setEmoji(b.dataset.e);
+  });
+  el('msgPreview').addEventListener('click', showEndMsg);
+  el('endClose').addEventListener('click', hideEndMsg);
+  el('endRestart').addEventListener('click', restart);
+  el('endMsg').addEventListener('click', e => { if (e.target === el('endMsg')) hideEndMsg(); });
+
   function syncSoundBtn() {
     const btn = el('soundBtn');
     btn.setAttribute('aria-pressed', String(sound.enabled));
@@ -905,6 +1087,12 @@
 
   document.addEventListener('keydown', e => {
     if (/^(TEXTAREA|INPUT)$/.test(document.activeElement.tagName)) return;
+    // عند ظهور رسالة الانتهاء: المسافة أو Esc أو Enter تغلقها فقط
+    if (!el('endMsg').hidden && (e.code === 'Space' || e.key === 'Escape' || e.key === 'Enter')) {
+      e.preventDefault();
+      hideEndMsg();
+      return;
+    }
     // تفادي تنفيذ الأمر مرتين إذا كان التركيز على زر
     if (e.code === 'Space' && document.activeElement.tagName === 'BUTTON') document.activeElement.blur();
     if (e.code === 'Space') {
@@ -932,6 +1120,7 @@
   renderPresets();
   render();
   renderTracks().then(() => setSoundMode(soundMode));
+  renderMsgPanel();
 })();
 </script>
 </body>
