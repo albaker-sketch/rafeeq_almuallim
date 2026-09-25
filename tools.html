@@ -8,23 +8,37 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zain:wght@400;700;800&family=Readex+Pro:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="assets/css/main.css">
+<style>
+  .class-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .class-bar-icon {
+    width: 46px; height: 46px; border-radius: 12px; flex: none;
+    display: grid; place-items: center;
+    background: var(--gold-soft); color: var(--gold);
+  }
+  .class-bar-icon svg { width: 26px; height: 26px; }
+  .class-bar-text { flex: 1; min-width: 200px; }
+  .class-bar-text strong { display: block; font-size: 1.05rem; }
+  .class-bar-text span { color: var(--muted); font-size: .9rem; }
+  .class-bar select {
+    font: inherit; color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 10px 12px; min-width: 240px; max-width: 100%;
+  }
+</style>
 </head>
 <body>
 
-<header class="site-header">
-  <div class="wrap">
-    <a class="brand" href="index.html" aria-label="رفيق المعلم، الصفحة الرئيسية">
-      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" fill="#0C7051"/><path d="M9 13.5c3.7-1.5 7.5-1.2 11 1.2V29c-3.5-2.3-7.3-2.6-11-1.2z" fill="#fff"/><path d="M31 13.5c-3.7-1.5-7.5-1.2-11 1.2V29c3.5-2.3 7.3-2.6 11-1.2z" fill="#fff" opacity=".75"/><circle cx="31" cy="9.5" r="4" fill="#C0913F"/></svg>
-      <span class="brand-name">رفيق المعلم<span class="brand-by">من رافد</span></span>
-    </a>
-    <nav class="main-nav" aria-label="القائمة الرئيسية">
-      <a href="index.html">الرئيسية</a>
-      <a href="tools.html" aria-current="page">الأدوات</a>
-      <a href="index.html#plans">الباقات</a>
-    </nav>
-    <a class="btn btn-primary header-cta" href="login.html">تسجيل الدخول</a>
-  </div>
-</header>
+<header id="siteHeader" data-base="" data-page="tools"></header>
 
 <main class="wrap">
   <section class="section">
@@ -33,18 +47,40 @@
       <h1 style="font-size:clamp(2.2rem,4vw,3rem)">أدوات الصف</h1>
       <p>اختر الأداة وافتحها على شاشة العرض. الأدوات الموسومة «مجانية» متاحة لكل من يسجّل، والموسومة «للمشتركين» ضمن الباقات الشهرية والسنوية.</p>
     </div>
+    <div class="class-bar" id="classBar">
+      <span class="class-bar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/></svg></span>
+      <div class="class-bar-text">
+        <strong>الصف الحالي</strong>
+        <span id="classBarHint">اختر الصف، وستظهر أسماء طلابه تلقائيًا في الأدوات المرتبطة بالصفوف.</span>
+      </div>
+      <label class="field-label" for="classSelect" hidden>الصف</label>
+      <select id="classSelect" aria-label="الصف الحالي"></select>
+      <a class="btn btn-ghost" href="classes.html" id="manageClasses">إدارة صفوفي</a>
+    </div>
     <div class="tool-grid" id="toolGrid"></div>
   </section>
 </main>
 
-<footer class="site-footer">
-  <div class="wrap">
-    <span>رفيق المعلم، أحد مشاريع رافد لتصميم البرمجيات الخاصة</span>
-    <span>© 2026</span>
-  </div>
-</footer>
+<footer id="siteFooter" data-base=""></footer>
+<script src="assets/js/layout.js"></script>
 
 <script src="assets/js/tools-data.js"></script>
-<script>renderToolCards(document.getElementById('toolGrid'));</script>
+<script src="assets/js/classes-store.js"></script>
+<script>
+  renderToolCards(document.getElementById('toolGrid'));
+  (function () {
+    const S = window.RafeeqClasses;
+    const select = document.getElementById('classSelect');
+    const count = S.fillSelect(select, { emptyLabel: 'بدون صف (قائمة يدوية)' });
+    if (!count) {
+      select.hidden = true;
+      document.getElementById('classBarHint').textContent = 'لم تضف صفوفك بعد. ارفع ملف إكسل بأسماء طلابك لتظهر تلقائيًا في الأدوات.';
+      const m = document.getElementById('manageClasses');
+      m.textContent = 'أضف صفوفك';
+      m.className = 'btn btn-primary';
+    }
+    select.addEventListener('change', () => S.setActive(select.value));
+  })();
+</script>
 </body>
 </html>

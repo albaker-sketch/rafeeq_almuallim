@@ -306,3 +306,20 @@ a.tool-card:hover {
 .section-head h2 { font-size: clamp(1.9rem, 3.4vw, 2.6rem); }
 .section-head p { color: var(--muted); }
 .eyebrow { font-size: .82rem; font-weight: 600; color: var(--gold); letter-spacing: .02em; }
+
+.footer-nav { display: flex; gap: 16px; flex-wrap: wrap; }
+.footer-nav a { color: var(--muted); text-decoration: none; }
+.footer-nav a:hover { color: var(--brand); }
+
+@media (max-width: 720px) {
+  .main-nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .main-nav a { flex: none; }
+}
+
+#siteHeader:empty { display: block; min-height: 69px; border-bottom: 1px solid var(--line); }
+
+.tool-card .links-class {
+  grid-column: 2; justify-self: start;
+  font-size: .8rem; color: var(--gold);
+  display: inline-flex; align-items: center; gap: 4px;
+}

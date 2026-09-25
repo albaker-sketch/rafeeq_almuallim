@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>صفوفي</title>
+<meta name="description" content="صفوفي: قاعدة بيانات صفوف المعلم وطلابه، تُستورد من ملف إكسل وتُربط بأدوات رفيق المعلم.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zain:wght@400;700;800&family=Readex+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/css/main.css">
+<link rel="stylesheet" href="assets/css/tool.css">
+<style>
+  .page-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding-block: 36px 24px;
+  }
+
+  .page-head h1 { font-size: clamp(2.4rem, 4.5vw, 3.2rem); }
+  .page-head p { color: var(--muted); max-width: 56ch; margin-top: 6px; }
+
+  .stats { display: flex; gap: 10px; flex-wrap: wrap; }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    min-width: 110px;
+  }
+  .stat b { font-family: var(--font-display); font-size: 1.9rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: .82rem; color: var(--muted); }
+
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+
+  /* الاستيراد */
+  .import {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: center;
+  }
+
+  @media (max-width: 820px) { .import { grid-template-columns: 1fr; } }
+
+  .drop {
+    border: 2px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 32px 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    background: var(--bg);
+  }
+
+  .drop:hover, .drop.is-over { border-color: var(--brand); background: var(--brand-soft); }
+  .drop svg { width: 44px; height: 44px; color: var(--brand); }
+  .drop strong { font-size: 1.1rem; }
+  .drop small { color: var(--muted); }
+
+  .format h3 { font-size: 1.3rem; margin-bottom: 8px; }
+  .format p { color: var(--muted); font-size: .9rem; margin-top: 10px; }
+
+  .sheet-wrap { overflow-x: auto; }
+  .sheet {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: .92rem;
+    background: var(--surface);
+  }
+  .sheet th, .sheet td { border: 1px solid var(--line); padding: 6px 12px; text-align: right; white-space: nowrap; }
+  .sheet th { background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+  .sheet .col { background: var(--surface-2); color: var(--muted); font-weight: 400; font-size: .78rem; text-align: center; width: 1%; }
+
+  /* رسائل */
+  .banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 18px;
+    background: var(--brand-soft);
+    color: var(--ink);
+  }
+  .banner.is-error { background: color-mix(in srgb, var(--danger) 14%, var(--surface)); }
+  .banner p { flex: 1; min-width: 200px; }
+  .banner .btn { padding: 6px 14px; font-size: .88rem; }
+
+  /* نموذج إضافة صف */
+  .inline-form {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .inline-form > div { flex: 1; min-width: 160px; }
+  .form-error { color: var(--danger); font-size: .88rem; width: 100%; }
+
+  /* شبكة الصفوف */
+  .grade-group { margin-top: 28px; }
+  .grade-group h2 { font-size: 1.6rem; margin-bottom: 12px; display: flex; align-items: baseline; gap: 10px; }
+  .grade-group h2 small { font-family: var(--font-body); font-size: .85rem; font-weight: 400; color: var(--muted); }
+
+  .class-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  .class-card {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 16px 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--ink);
+    cursor: pointer;
+    font: inherit;
+    text-align: right;
+    transition: border-color .15s, transform .15s;
+  }
+  .class-card:hover { border-color: var(--brand); transform: translateY(-2px); }
+  .class-card .sec { font-family: var(--font-display); font-size: 1.7rem; font-weight: 800; line-height: 1.2; }
+  .class-card .cnt { color: var(--muted); font-size: .9rem; font-variant-numeric: tabular-nums; }
+  .class-card.is-active { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .empty h2 { color: var(--ink); font-size: 1.7rem; }
+
+  /* صفحة الصف */
+  .class-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-block: 28px 18px;
+  }
+  .class-head h1 { font-size: clamp(2.2rem, 4.5vw, 3rem); }
+  .class-head .count { color: var(--muted); font-variant-numeric: tabular-nums; margin-inline-end: auto; }
+
+  .class-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 860px) { .class-body { grid-template-columns: 1fr; } }
+
+  .students { list-style: none; margin: 0; padding: 0; }
+  .students li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--line);
+  }
+  .students li:last-child { border-bottom: 0; }
+  .students .num {
+    width: 2.2em;
+    text-align: center;
+    color: var(--muted);
+    font-size: .85rem;
+    font-variant-numeric: tabular-nums;
+    flex: none;
+  }
+  .students .nm { flex: 1; font-size: 1.05rem; overflow-wrap: anywhere; }
+  .students input { flex: 1; padding: 6px 10px; }
+
+  .mini {
+    width: 36px;
+    height: 36px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    flex: none;
+  }
+  .mini:hover { background: var(--surface-2); color: var(--ink); }
+  .mini.danger:hover { color: var(--danger); }
+  .mini svg { width: 18px; height: 18px; }
+
+  .list-tools { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .list-tools input { flex: 1; min-width: 160px; }
+
+  .side-stack { display: flex; flex-direction: column; gap: 16px; }
+  .side-stack .btn { width: 100%; }
+  .btn-danger { background: transparent; color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, transparent); }
+  .btn-danger:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+  .btn-danger.is-confirm { background: var(--danger); color: #fff; }
+</style>
+</head>
+<body>
+
+<header id="siteHeader" data-base="" data-page="classes"></header>
+
+<main class="wrap">
+
+  <!-- ========== قائمة الصفوف ========== -->
+  <div id="listView">
+    <div class="page-head">
+      <div>
+        <span class="eyebrow">قاعدة بيانات الصفوف</span>
+        <h1>صفوفي</h1>
+        <p>ارفع ملف إكسل بأسماء طلابك وصفوفهم وشعبهم مرة واحدة، ثم اختر الصف من أي أداة لتظهر أسماء طلابه تلقائيًا.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><b id="statClasses">0</b><span>صف وشعبة</span></div>
+        <div class="stat"><b id="statStudents">0</b><span>طالب</span></div>
+      </div>
+    </div>
+
+    <div id="banner" class="banner" hidden></div>
+
+    <div class="actions">
+      <button class="btn btn-primary" type="button" id="importBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+        استيراد من إكسل
+      </button>
+      <button class="btn btn-ghost" type="button" id="addClassBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        إضافة صف يدويًا
+      </button>
+      <button class="btn btn-ghost" type="button" id="templateBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg>
+        تحميل نموذج الإكسل
+      </button>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden>
+    </div>
+
+    <form class="panel inline-form" id="addClassForm" hidden style="margin-bottom:18px">
+      <div>
+        <label class="field-label" for="newGrade">الصف</label>
+        <input type="text" id="newGrade" placeholder="مثال: السابع">
+      </div>
+      <div>
+        <label class="field-label" for="newSection">الشعبة</label>
+        <input type="text" id="newSection" placeholder="مثال: 2">
+      </div>
+      <button class="btn btn-primary" type="submit">حفظ الصف</button>
+      <button class="btn btn-ghost" type="button" id="cancelAddClass">إلغاء</button>
+      <p class="form-error" id="addClassError" hidden></p>
+    </form>
+
+    <section class="panel import" id="importPanel">
+      <div class="drop" id="drop" role="button" tabindex="0" aria-label="اختر ملف إكسل للاستيراد">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13l2 2 4-4"/></svg>
+        <strong>اسحب ملف الإكسل هنا أو اضغط لاختياره</strong>
+        <small>xlsx أو xls أو csv</small>
+      </div>
+      <div class="format">
+        <h3>شكل الملف المطلوب</h3>
+        <div class="sheet-wrap">
+          <table class="sheet">
+            <thead>
+              <tr><th class="col"></th><th>اسم الطالب</th><th>الصف</th><th>الشعبة</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="col">2</td><td>عبدالله محمد</td><td>السابع</td><td>1</td></tr>
+              <tr><td class="col">3</td><td>سارة أحمد</td><td>السابع</td><td>1</td></tr>
+              <tr><td class="col">4</td><td>يوسف خالد</td><td>الثامن</td><td>3</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>الصف الأول عناوين الأعمدة، وترتيبها غير مهم. عند رفع ملف جديد تُستبدل قائمة كل صف موجود في الملف بما فيه، وتبقى بقية صفوفك كما هي.</p>
+      </div>
+    </section>
+
+    <div id="classesList"></div>
+  </div>
+
+  <!-- ========== صفحة صف واحد ========== -->
+  <div id="classView" hidden>
+    <div class="tool-bar" style="padding-bottom:0">
+      <a class="back-link" href="#" id="backToList">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        كل الصفوف
+      </a>
+    </div>
+
+    <div class="class-head">
+      <h1 id="classTitle"></h1>
+      <span class="count" id="classCount"></span>
+      <a class="btn btn-primary" href="tools/wheel.html" id="openWheel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6.4 6.4M12 12 5.6 18.4M12 12H3"/></svg>
+        افتح في عجلة الأسماء
+      </a>
+    </div>
+
+    <div class="class-body">
+      <section class="panel">
+        <form class="list-tools" id="addStudentForm">
+          <input type="text" id="newStudent" placeholder="اسم طالب جديد" aria-label="اسم طالب جديد">
+          <button class="btn btn-primary" type="submit">إضافة طالب</button>
+        </form>
+        <p class="form-error" id="studentError" hidden></p>
+        <div class="list-tools" style="margin-top:6px">
+          <input type="text" id="search" placeholder="بحث في أسماء الصف" aria-label="بحث في أسماء الصف">
+        </div>
+        <ol class="students" id="students"></ol>
+        <p class="empty-note" id="studentsEmpty" hidden style="color:var(--muted);padding:12px 4px">لا يوجد طلاب في هذا الصف بعد. أضف الأسماء يدويًا أو ارفع ملف إكسل.</p>
+      </section>
+
+      <aside class="side-stack">
+        <form class="panel" id="editClassForm">
+          <h2>بيانات الصف</h2>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div>
+              <label class="field-label" for="editGrade">الصف</label>
+              <input type="text" id="editGrade">
+            </div>
+            <div>
+              <label class="field-label" for="editSection">الشعبة</label>
+              <input type="text" id="editSection">
+            </div>
+            <p class="form-error" id="editClassError" hidden></p>
+            <button class="btn btn-ghost" type="submit">حفظ التعديل</button>
+          </div>
+        </form>
+        <div class="panel">
+          <h2>حذف الصف</h2>
+          <p style="color:var(--muted);font-size:.9rem;margin-bottom:12px">يحذف الصف وكل أسماء طلابه من هذا الجهاز.</p>
+          <button class="btn btn-danger" type="button" id="deleteClassBtn">حذف الصف</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+</main>
+
+<footer id="siteFooter" data-base=""></footer>
+<script src="assets/js/layout.js"></script>
+<script src="assets/vendor/xlsx.full.min.js"></script>
+<script src="assets/js/classes-store.js"></script>
+<script>
+(function () {
+  const S = window.RafeeqClasses;
+  const el = id => document.getElementById(id);
+  let currentId = '';
+  let undoSnapshot = null;
+  let showImportPanel = false;
+
+  const ICON_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
+  const ICON_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>';
+  const ICON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>';
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  }
+
+  function studentsWord(n) {
+    if (n === 0) return 'لا يوجد طلاب';
+    if (n === 1) return 'طالب واحد';
+    if (n === 2) return 'طالبان';
+    if (n <= 10) return n + ' طلاب';
+    return n + ' طالبًا';
+  }
+
+  function sectionsWord(n) {
+    if (n === 1) return 'شعبة واحدة';
+    if (n === 2) return 'شعبتان';
+    if (n <= 10) return n + ' شعب';
+    return n + ' شعبة';
+  }
+
+  // ---------- العرض ----------
+  function showBanner(html, isError) {
+    const b = el('banner');
+    b.innerHTML = html;
+    b.classList.toggle('is-error', !!isError);
+    b.hidden = false;
+  }
+
+  function renderList() {
+    const classes = S.all();
+    const active = S.getActive();
+    el('statClasses').textContent = classes.length;
+    el('statStudents').textContent = classes.reduce((n, c) => n + c.students.length, 0);
+
+    const box = el('classesList');
+    // صندوق الاستيراد يظهر فقط قبل إضافة أي صف، وبعدها يكفي زر الاستيراد
+    el('importPanel').hidden = classes.length > 0 && !showImportPanel;
+    if (!classes.length) {
+      box.innerHTML = `
+        <div class="empty">
+          <h2>لا توجد صفوف بعد</h2>
+          <p>ابدأ باستيراد ملف إكسل، أو أضف صفًا يدويًا، أو جرّب الصفحة ببيانات نموذجية.</p>
+          <button class="btn btn-ghost" type="button" id="sampleBtn">جرّب ببيانات نموذجية</button>
+        </div>`;
+      el('sampleBtn').addEventListener('click', loadSample);
+      return;
+    }
+
+    // تجميع حسب الصف
+    const groups = [];
+    classes.forEach(c => {
+      const key = S.norm(c.grade);
+      let g = groups.find(x => x.key === key);
+      if (!g) { g = { key, label: S.gradeLabel(c.grade), items: [] }; groups.push(g); }
+      g.items.push(c);
+    });
+
+    box.innerHTML = groups.map(g => `
+      <section class="grade-group">
+        <h2>${esc(g.label)} <small>${sectionsWord(g.items.length)}</small></h2>
+        <div class="class-grid">
+          ${g.items.map(c => `
+            <a class="class-card${c.id === active ? ' is-active' : ''}" href="#${c.id}">
+              <span class="sec">${c.section ? 'شعبة ' + esc(c.section) : esc(S.gradeLabel(c.grade))}</span>
+              <span class="cnt">${studentsWord(c.students.length)}</span>
+            </a>`).join('')}
+        </div>
+      </section>`).join('');
+  }
+
+  function renderClass() {
+    const c = S.get(currentId);
+    if (!c) { go(''); return; }
+    el('classTitle').textContent = S.label(c);
+    el('classCount').textContent = studentsWord(c.students.length);
+    el('editGrade').value = c.grade;
+    el('editSection').value = c.section;
+    document.title = S.label(c) + ' · صفوفي';
+
+    const q = S.norm(el('search').value);
+    const list = c.students
+      .map((s, i) => ({ s, i }))
+      .filter(x => !q || S.norm(x.s.name).includes(q));
+
+    el('students').innerHTML = list.map(({ s, i }) => `
+      <li data-id="${s.id}">
+        <span class="num">${i + 1}</span>
+        <span class="nm">${esc(s.name)}</span>
+        <button class="mini" type="button" data-act="edit" title="تعديل الاسم" aria-label="تعديل ${esc(s.name)}">${ICON_EDIT}</button>
+        <button class="mini danger" type="button" data-act="del" title="حذف" aria-label="حذف ${esc(s.name)}">${ICON_DEL}</button>
+      </li>`).join('');
+    el('studentsEmpty').hidden = c.students.length > 0;
+  }
+
+  // التنقل بين القائمة وصفحة الصف عبر # (يعمل مع زر الرجوع في المتصفح)
+  function route() {
+    const id = location.hash.slice(1);
+    const c = id ? S.get(id) : null;
+    currentId = c ? c.id : '';
+    el('listView').hidden = !!c;
+    el('classView').hidden = !c;
+    if (c) {
+      el('search').value = '';
+      el('studentError').hidden = true;
+      el('editClassError').hidden = true;
+      resetDelete();
+      renderClass();
+    } else {
+      document.title = 'صفوفي';
+      renderList();
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function go(id) {
+    if (id) location.hash = id;
+    else history.pushState('', document.title, location.pathname + location.search);
+    route();
+  }
+
+  // ---------- الاستيراد من إكسل ----------
+  const NAME_RE = /اسم|name/i;
+  const NAME_FALLBACK_RE = /طالب|student/i;
+  const SECTION_RE = /شعب|فصل|section|class|division/i;
+  const GRADE_RE = /صف|مرحل|مستوى|grade|level|year/i;
+
+  function detectColumns(row) {
+    const cells = row.map(v => String(v ?? '').trim());
+    const find = (re, skip) => cells.findIndex((v, i) => v && re.test(v) && !skip.includes(i));
+    let name = find(NAME_RE, []);
+    if (name < 0) name = find(NAME_FALLBACK_RE, []);
+    const section = find(SECTION_RE, [name]);
+    const grade = find(GRADE_RE, [name, section]);
+    return { name, grade, section };
+  }
+
+  function parseWorkbook(wb) {
+    const rows = [];
+    let skipped = 0;
+    const problems = [];
+
+    wb.SheetNames.forEach(sheetName => {
+      const ws = wb.Sheets[sheetName];
+      const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false, blankrows: false });
+      if (!aoa.length) return;
+
+      // البحث عن صف العناوين في أول 10 صفوف
+      let headerIdx = -1, cols = null;
+      for (let i = 0; i < Math.min(10, aoa.length); i++) {
+        const c = detectColumns(aoa[i]);
+        if (c.name >= 0 && (c.grade >= 0 || c.section >= 0)) { headerIdx = i; cols = c; break; }
+      }
+      // بدون عناوين: نفترض الترتيب اسم، صف، شعبة
+      if (!cols) { cols = { name: 0, grade: 1, section: 2 }; headerIdx = -1; }
+
+      // إن لم يوجد عمود للصف نستخدم اسم الورقة
+      const gradeFromSheet = cols.grade < 0;
+      if (gradeFromSheet) problems.push(`ورقة «${sheetName}» بلا عمود للصف، فاستُخدم اسم الورقة صفًّا.`);
+
+      aoa.slice(headerIdx + 1).forEach(r => {
+        const name = r[cols.name];
+        const grade = gradeFromSheet ? sheetName : r[cols.grade];
+        const section = cols.section >= 0 ? r[cols.section] : '';
+        if (String(name ?? '').trim() && String(grade ?? '').trim()) rows.push({ name, grade, section });
+        else if (r.some(v => String(v ?? '').trim())) skipped++;
+      });
+    });
+    return { rows, skipped, problems };
+  }
+
+  async function importFile(file) {
+    if (!file) return;
+    if (typeof XLSX === 'undefined') {
+      showBanner('<p>تعذّر تحميل قارئ ملفات الإكسل. حدّث الصفحة وحاول مرة أخرى.</p>', true);
+      return;
+    }
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const { rows, skipped, problems } = parseWorkbook(wb);
+      if (!rows.length) {
+        showBanner('<p>لم نجد أسماء طلاب في الملف. تأكد أن فيه أعمدة: اسم الطالب، الصف، الشعبة.</p>', true);
+        return;
+      }
+      undoSnapshot = S.snapshot();
+      const r = S.importRows(rows);
+      const parts = [];
+      if (r.created) parts.push(`${r.created} ${r.created === 1 ? 'صف جديد' : 'صفوف جديدة'}`);
+      if (r.updated) parts.push(`تحديث ${r.updated} ${r.updated === 1 ? 'صف' : 'صفوف'}`);
+      let msg = `<b>تم الاستيراد من «${esc(file.name)}»:</b> ${parts.join('، ')}، بإجمالي ${studentsWord(r.students)}.`;
+      if (skipped) msg += ` تم تجاوز ${skipped} ${skipped === 1 ? 'سطر ناقص' : 'أسطر ناقصة'}.`;
+      if (problems.length) msg += ' ' + problems.map(esc).join(' ');
+      showBanner(`<p>${msg}</p><button class="btn btn-ghost" type="button" id="undoBtn">تراجع عن الاستيراد</button>`);
+      el('undoBtn').addEventListener('click', () => {
+        if (undoSnapshot) S.restore(undoSnapshot);
+        undoSnapshot = null;
+        showBanner('<p>تم التراجع، وعادت الصفوف كما كانت قبل الاستيراد.</p>');
+        renderList();
+      });
+      renderList();
+    } catch (e) {
+      showBanner('<p>تعذّرت قراءة الملف. تأكد أنه ملف إكسل (xlsx أو xls) أو csv سليم.</p>', true);
+    } finally {
+      el('fileInput').value = '';
+    }
+  }
+
+  function downloadTemplate() {
+    if (typeof XLSX === 'undefined') return;
+    const aoa = [
+      ['اسم الطالب', 'الصف', 'الشعبة'],
+      ['عبدالله محمد', 'السابع', '1'],
+      ['سارة أحمد', 'السابع', '1'],
+      ['يوسف خالد', 'الثامن', '3']
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{ wch: 28 }, { wch: 14 }, { wch: 10 }];
+    const wb = XLSX.utils.book_new();
+    wb.Workbook = { Views: [{ RTL: true }] };
+    XLSX.utils.book_append_sheet(wb, ws, 'الطلاب');
+    XLSX.writeFile(wb, 'نموذج-صفوفي.xlsx');
+  }
+
+  function loadSample() {
+    const sample = {
+      'السابع|1': ['عبدالله محمد', 'سارة أحمد', 'يوسف خالد', 'نورة سالم', 'فهد علي', 'مريم حسن', 'عمر ناصر', 'ريم عبدالعزيز', 'خالد إبراهيم', 'جود فيصل', 'سلطان حمد', 'هيا راشد'],
+      'السابع|2': ['راشد سعيد', 'دانة يوسف', 'حمد عبدالله', 'لطيفة محمد', 'ناصر خليفة', 'شهد أحمد', 'تميم علي', 'العنود سالم', 'جاسم حسن', 'مها عبدالرحمن'],
+      'الثامن|3': ['بدر خالد', 'غلا فهد', 'منصور ناصر', 'روان عمر', 'زايد سعيد', 'أسماء علي', 'حسن محمد', 'نوف حمد', 'علي يوسف']
+    };
+    const rows = [];
+    Object.entries(sample).forEach(([k, names]) => {
+      const [grade, section] = k.split('|');
+      names.forEach(name => rows.push({ name, grade, section }));
+    });
+    S.importRows(rows);
+    showBanner('<p>أُضيفت 3 صفوف نموذجية للتجربة. يمكنك حذفها من صفحة كل صف، أو استبدالها باستيراد ملفك.</p>');
+    renderList();
+  }
+
+  // ---------- الأحداث: القائمة ----------
+  el('importBtn').addEventListener('click', () => {
+    if (el('importPanel').hidden) { showImportPanel = true; el('importPanel').hidden = false; }
+    el('fileInput').click();
+  });
+  el('fileInput').addEventListener('change', e => importFile(e.target.files[0]));
+  el('templateBtn').addEventListener('click', downloadTemplate);
+
+  const drop = el('drop');
+  drop.addEventListener('click', () => el('fileInput').click());
+  drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el('fileInput').click(); } });
+  ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('is-over'); }));
+  ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('is-over'); }));
+  drop.addEventListener('drop', e => importFile(e.dataTransfer.files[0]));
+
+  el('addClassBtn').addEventListener('click', () => {
+    el('addClassForm').hidden = false;
+    el('addClassError').hidden = true;
+    el('newGrade').focus();
+  });
+  el('cancelAddClass').addEventListener('click', () => { el('addClassForm').hidden = true; });
+  el('addClassForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const r = S.addClass(el('newGrade').value, el('newSection').value);
+    if (r.error) {
+      el('addClassError').textContent = r.error;
+      el('addClassError').hidden = false;
+      return;
+    }
+    el('newGrade').value = '';
+    el('newSection').value = '';
+    el('addClassForm').hidden = true;
+    go(r.cls.id);
+  });
+
+  // ---------- الأحداث: صفحة الصف ----------
+  el('backToList').addEventListener('click', e => { e.preventDefault(); go(''); });
+
+  el('openWheel').addEventListener('click', () => S.setActive(currentId));
+
+  el('addStudentForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const input = el('newStudent');
+    // يدعم لصق عدة أسماء مفصولة بفواصل
+    const names = input.value.split(/[,،\n]/).map(s => s.trim()).filter(Boolean);
+    if (!names.length) return;
+    let err = '';
+    names.forEach(n => { const r = S.addStudent(currentId, n); if (r.error) err = `«${n}»: ${r.error}`; });
+    el('studentError').textContent = err;
+    el('studentError').hidden = !err;
+    input.value = '';
+    input.focus();
+    renderClass();
+  });
+
+  el('search').addEventListener('input', renderClass);
+
+  el('students').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const li = btn.closest('li');
+    const sid = li.dataset.id;
+    if (btn.dataset.act === 'del') {
+      S.removeStudent(currentId, sid);
+      renderClass();
+    } else if (btn.dataset.act === 'edit') {
+      const nm = li.querySelector('.nm');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = nm.textContent;
+      input.setAttribute('aria-label', 'الاسم الجديد');
+      nm.replaceWith(input);
+      btn.dataset.act = 'save';
+      btn.innerHTML = ICON_OK;
+      btn.title = 'حفظ';
+      input.focus();
+      input.select();
+      input.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter') btn.click();
+        if (ev.key === 'Escape') renderClass();
+      });
+    } else if (btn.dataset.act === 'save') {
+      S.renameStudent(currentId, sid, li.querySelector('input').value);
+      renderClass();
+    }
+  });
+
+  el('editClassForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const r = S.updateClass(currentId, el('editGrade').value, el('editSection').value);
+    el('editClassError').textContent = r.error || '';
+    el('editClassError').hidden = !r.error;
+    if (!r.error) renderClass();
+  });
+
+  // حذف بخطوتين: الضغطة الأولى تطلب التأكيد
+  let deleteTimer = 0;
+  function resetDelete() {
+    clearTimeout(deleteTimer);
+    const b = el('deleteClassBtn');
+    b.classList.remove('is-confirm');
+    b.textContent = 'حذف الصف';
+  }
+  el('deleteClassBtn').addEventListener('click', () => {
+    const b = el('deleteClassBtn');
+    if (!b.classList.contains('is-confirm')) {
+      b.classList.add('is-confirm');
+      b.textContent = 'اضغط مرة أخرى لتأكيد الحذف';
+      deleteTimer = setTimeout(resetDelete, 4000);
+      return;
+    }
+    const label = S.label(S.get(currentId));
+    S.removeClass(currentId);
+    go('');
+    showBanner(`<p>تم حذف ${esc(label)}.</p>`);
+  });
+
+  window.addEventListener('hashchange', route);
+  route();
+})();
+</script>
+</body>
+</html>

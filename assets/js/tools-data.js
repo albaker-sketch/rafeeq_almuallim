@@ -1,6 +1,7 @@
 /* قائمة أدوات رفيق المعلم
    tier: "free" (مجانية بالتسجيل) | "pro" (للمشتركين)
    status: "live" (متاحة) | "soon" (قريبًا)
+   usesClass: true إذا كانت الأداة تقرأ أسماء طلاب الصف المختار
    لإضافة أداة جديدة: أضف عنصرًا هنا وأنشئ صفحتها داخل مجلد tools/ */
 window.RAFEEQ_TOOLS = [
   {
@@ -10,6 +11,7 @@ window.RAFEEQ_TOOLS = [
     href: 'tools/wheel.html',
     tier: 'free',
     status: 'live',
+    usesClass: true,
     color: '#0C7051',
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6.4 6.4M12 12 5.6 18.4M12 12H3"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>'
   },
@@ -40,7 +42,8 @@ window.renderToolCards = function (container, basePath) {
         <span class="tool-name">${t.name}</span>
         <span class="tool-desc">${t.desc}</span>
       </span>
-      ${tag}`;
+      ${tag}
+      ${t.usesClass ? '<span class="links-class"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>تعرض طلاب الصف المختار</span>' : ''}`;
     return live
       ? `<a class="tool-card" href="${base}${t.href}">${inner}</a>`
       : `<div class="tool-card is-soon" aria-disabled="true">${inner}</div>`;

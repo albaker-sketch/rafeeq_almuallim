@@ -124,6 +124,27 @@
   .side { display: flex; flex-direction: column; gap: 16px; }
 
   #names { min-height: 260px; resize: vertical; line-height: 1.8; }
+  #names[readonly] { background: var(--surface-2); color: var(--muted); cursor: default; }
+
+  .class-select {
+    font: inherit;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    width: 100%;
+  }
+
+  .stage-class {
+    font-family: var(--font-display);
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    font-weight: 700;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  .class-note { font-size: .85rem; color: var(--muted); margin-top: 8px; }
 
   .count {
     font-family: var(--font-body);
@@ -180,20 +201,7 @@
 </head>
 <body>
 
-<header class="site-header">
-  <div class="wrap">
-    <a class="brand" href="../index.html" aria-label="رفيق المعلم، الصفحة الرئيسية">
-      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" fill="#0C7051"/><path d="M9 13.5c3.7-1.5 7.5-1.2 11 1.2V29c-3.5-2.3-7.3-2.6-11-1.2z" fill="#fff"/><path d="M31 13.5c-3.7-1.5-7.5-1.2-11 1.2V29c3.5-2.3 7.3-2.6 11-1.2z" fill="#fff" opacity=".75"/><circle cx="31" cy="9.5" r="4" fill="#C0913F"/></svg>
-      <span class="brand-name">رفيق المعلم<span class="brand-by">من رافد</span></span>
-    </a>
-    <nav class="main-nav" aria-label="القائمة الرئيسية">
-      <a href="../index.html">الرئيسية</a>
-      <a href="../tools.html" aria-current="page">الأدوات</a>
-      <a href="../index.html#plans">الباقات</a>
-    </nav>
-    <a class="btn btn-primary header-cta" href="../login.html">تسجيل الدخول</a>
-  </div>
-</header>
+<header id="siteHeader" data-base="../" data-page="tools"></header>
 
 <main class="wrap">
   <div class="tool-bar">
@@ -216,6 +224,7 @@
         </button>
       </div>
 
+      <p class="stage-class" id="stageClass" hidden></p>
       <div class="wheel-box">
         <svg class="pointer" id="pointer" viewBox="0 0 44 54" aria-hidden="true"><path d="M22 52 4 14a18 18 0 1 1 36 0z" fill="#C0913F"/><circle cx="22" cy="18" r="7" fill="#fff"/></svg>
         <canvas id="wheel" aria-label="عجلة أسماء الطلاب، اضغط لتدويرها"></canvas>
@@ -244,7 +253,10 @@
     <aside class="side">
       <div class="panel">
         <h2>قائمة الطلاب <span class="count" id="count"></span></h2>
-        <label class="field-label" for="names">اكتب اسم كل طالب في سطر مستقل، أو الصق القائمة من ملف.</label>
+        <label class="field-label" for="classSelect">الصف</label>
+        <select id="classSelect" class="class-select"></select>
+        <p class="class-note" id="classNote" hidden></p>
+        <label class="field-label" for="names" id="namesLabel" style="margin-top:12px">اكتب اسم كل طالب في سطر مستقل، أو الصق القائمة من ملف.</label>
         <textarea id="names" spellcheck="false"></textarea>
         <div class="row">
           <button class="btn btn-ghost" type="button" id="shuffleBtn">خلط الترتيب</button>
@@ -268,14 +280,11 @@
   </div>
 </main>
 
-<footer class="site-footer">
-  <div class="wrap">
-    <span>رفيق المعلم، أحد مشاريع رافد لتصميم البرمجيات الخاصة</span>
-    <span>© 2026</span>
-  </div>
-</footer>
+<footer id="siteFooter" data-base="../"></footer>
+<script src="../assets/js/layout.js"></script>
 
 <script src="../assets/js/common.js"></script>
+<script src="../assets/js/classes-store.js"></script>
 <script>
 (function () {
   const { store, sound, toggleFullscreen } = window.Rafeeq;
@@ -289,12 +298,47 @@
   const ctx = canvas.getContext('2d');
   const namesInput = el('names');
 
-  let picked = store.get('wheel:picked', []);
+  const Classes = window.RafeeqClasses;
+  let source = ''; // '' = قائمة يدوية، وإلا معرّف الصف
+  let picked = [];
+  const pickedKey = () => 'wheel:picked:' + (source || 'manual');
   let rotation = 0;
   let spinning = false;
   let lastPick = null;
 
-  namesInput.value = store.get('wheel:names', SAMPLE).join('\n');
+  // تحميل أسماء الصف المختار، أو القائمة اليدوية المحفوظة
+  function loadSource(id) {
+    const cls = id ? Classes.get(id) : null;
+    source = cls ? cls.id : '';
+    Classes.setActive(source);
+    const isClass = !!cls;
+    namesInput.value = isClass
+      ? cls.students.map(st => st.name).join('\n')
+      : store.get('wheel:names', SAMPLE).join('\n');
+    namesInput.readOnly = isClass;
+    el('namesLabel').textContent = isClass
+      ? 'أسماء طلاب الصف (للتعديل افتح صفحة صفوفي)'
+      : 'اكتب اسم كل طالب في سطر مستقل، أو الصق القائمة من ملف.';
+    el('clearBtn').hidden = isClass;
+    el('classNote').hidden = !isClass || cls.students.length > 0;
+    el('classNote').innerHTML = 'لا يوجد طلاب في هذا الصف بعد. <a href="../classes.html#' + source + '">أضف الأسماء من صفوفي</a>.';
+    el('stageClass').hidden = !isClass;
+    el('stageClass').textContent = isClass ? Classes.label(cls) : '';
+    picked = store.get(pickedKey(), []);
+    renderPicked();
+    draw();
+  }
+
+  function initClassSelect() {
+    const sel = el('classSelect');
+    const count = Classes.fillSelect(sel, { emptyLabel: 'قائمة يدوية' });
+    if (!count) {
+      sel.innerHTML = '<option value="">قائمة يدوية</option>';
+      el('classNote').hidden = false;
+    }
+    sel.addEventListener('change', () => { closeResult(); loadSource(sel.value); });
+    return Classes.get(Classes.getActive()) ? Classes.getActive() : '';
+  }
   el('removePicked').checked = store.get('wheel:removePicked', true);
 
   function allNames() {
@@ -481,7 +525,7 @@
   function finish(name) {
     lastPick = name;
     picked.push(name);
-    store.set('wheel:picked', picked);
+    store.set(pickedKey(), picked);
     el('resultName').textContent = name;
     el('result').hidden = false;
     sound.win();
@@ -511,6 +555,7 @@
   el('closeBtn').addEventListener('click', closeResult);
 
   namesInput.addEventListener('input', () => {
+    if (source) return;
     store.set('wheel:names', allNames());
     draw();
   });
@@ -527,7 +572,7 @@
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     namesInput.value = arr.join('\n');
-    store.set('wheel:names', arr);
+    if (!source) store.set('wheel:names', arr);
     draw();
   });
 
@@ -535,7 +580,7 @@
     namesInput.value = '';
     store.set('wheel:names', []);
     picked = [];
-    store.set('wheel:picked', picked);
+    store.set(pickedKey(), picked);
     renderPicked();
     draw();
     namesInput.focus();
@@ -543,7 +588,7 @@
 
   el('resetPickedBtn').addEventListener('click', () => {
     picked = [];
-    store.set('wheel:picked', picked);
+    store.set(pickedKey(), picked);
     renderPicked();
     draw();
   });
@@ -580,8 +625,12 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
 
   syncSoundBtn();
-  renderPicked();
-  draw();
+  const startSource = initClassSelect();
+  loadSource(startSource);
+  if (!Classes.all().length) {
+    el('classNote').hidden = false;
+    el('classNote').innerHTML = 'ارفع أسماء طلابك مرة واحدة من <a href="../classes.html">صفوفي</a> لتظهر هنا تلقائيًا عند اختيار الصف.';
+  }
 })();
 </script>
 </body>

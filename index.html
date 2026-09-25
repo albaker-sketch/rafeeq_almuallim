@@ -132,6 +132,35 @@
 
   @media (max-width: 760px) { .why { grid-template-columns: 1fr; } }
 
+  /* ---------- خطوات صفوفي ---------- */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    counter-reset: step;
+  }
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .step::before {
+    counter-increment: step;
+    content: counter(step);
+    width: 36px; height: 36px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--brand-soft); color: var(--brand);
+    font-weight: 600; margin-bottom: 6px;
+  }
+  .step h3 { font-size: 1.4rem; }
+  .step p { color: var(--muted); font-size: .95rem; }
+  .steps-cta { margin-top: 18px; }
+  @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
+
   /* ---------- الباقات ---------- */
   .plans {
     display: grid;
@@ -173,20 +202,7 @@
 </head>
 <body>
 
-<header class="site-header">
-  <div class="wrap">
-    <a class="brand" href="index.html" aria-label="رفيق المعلم، الصفحة الرئيسية">
-      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" fill="#0C7051"/><path d="M9 13.5c3.7-1.5 7.5-1.2 11 1.2V29c-3.5-2.3-7.3-2.6-11-1.2z" fill="#fff"/><path d="M31 13.5c-3.7-1.5-7.5-1.2-11 1.2V29c3.5-2.3 7.3-2.6 11-1.2z" fill="#fff" opacity=".75"/><circle cx="31" cy="9.5" r="4" fill="#C0913F"/></svg>
-      <span class="brand-name">رفيق المعلم<span class="brand-by">من رافد</span></span>
-    </a>
-    <nav class="main-nav" aria-label="القائمة الرئيسية">
-      <a href="index.html" aria-current="page">الرئيسية</a>
-      <a href="tools.html">الأدوات</a>
-      <a href="index.html#plans">الباقات</a>
-    </nav>
-    <a class="btn btn-primary header-cta" href="login.html">تسجيل الدخول</a>
-  </div>
-</header>
+<header id="siteHeader" data-base="" data-page="home"></header>
 
 <main class="wrap">
 
@@ -248,6 +264,28 @@
     </div>
   </section>
 
+  <section class="section" id="classes">
+    <div class="section-head">
+      <span class="eyebrow">صفوفي</span>
+      <h2>ارفع أسماء طلابك مرة واحدة، واستخدمها في كل أداة</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <h3>ارفع ملف الإكسل</h3>
+        <p>ملف فيه اسم الطالب والصف والشعبة، فتظهر صفوفك وشعبك مرتبة تلقائيًا.</p>
+      </div>
+      <div class="step">
+        <h3>اختر الصف</h3>
+        <p>من صفحة الأدوات أو من داخل الأداة نفسها، حسب الحصة التي أمامك.</p>
+      </div>
+      <div class="step">
+        <h3>ابدأ الأداة</h3>
+        <p>تظهر أسماء طلاب الصف في عجلة الأسماء مباشرة، بلا نسخ ولا لصق.</p>
+      </div>
+    </div>
+    <div class="steps-cta"><a class="btn btn-primary" href="classes.html">افتح صفوفي</a></div>
+  </section>
+
   <section class="section" id="plans">
     <div class="section-head">
       <span class="eyebrow">الباقات</span>
@@ -289,12 +327,8 @@
 
 </main>
 
-<footer class="site-footer">
-  <div class="wrap">
-    <span>رفيق المعلم، أحد مشاريع رافد لتصميم البرمجيات الخاصة</span>
-    <span>© 2026</span>
-  </div>
-</footer>
+<footer id="siteFooter" data-base=""></footer>
+<script src="assets/js/layout.js"></script>
 
 <script src="assets/js/tools-data.js"></script>
 <script>
