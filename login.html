@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>دخول رفيق المعلم</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zain:wght@400;700;800&family=Readex+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/css/main.css">
+<link rel="stylesheet" href="assets/css/tool.css">
+<style>
+  .auth {
+    max-width: 440px;
+    margin: 56px auto 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .auth h1 { font-size: 2.2rem; }
+  .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface-2); border-radius: 999px; padding: 4px; }
+  .auth-tabs button { font: inherit; font-weight: 600; border: 0; background: transparent; color: var(--muted); padding: 8px; border-radius: 999px; cursor: pointer; }
+  .auth-tabs button[aria-selected="true"] { background: var(--surface); color: var(--brand); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .auth form { display: flex; flex-direction: column; gap: 14px; }
+  .auth .btn { width: 100%; }
+  .notice { background: var(--gold-soft); color: var(--ink); border-radius: var(--radius-sm); padding: 12px 14px; font-size: .9rem; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="رفيق المعلم، الصفحة الرئيسية">
+      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" fill="#0C7051"/><path d="M9 13.5c3.7-1.5 7.5-1.2 11 1.2V29c-3.5-2.3-7.3-2.6-11-1.2z" fill="#fff"/><path d="M31 13.5c-3.7-1.5-7.5-1.2-11 1.2V29c3.5-2.3 7.3-2.6 11-1.2z" fill="#fff" opacity=".75"/><circle cx="31" cy="9.5" r="4" fill="#C0913F"/></svg>
+      <span class="brand-name">رفيق المعلم<span class="brand-by">من رافد</span></span>
+    </a>
+    <nav class="main-nav" aria-label="القائمة الرئيسية">
+      <a href="index.html">الرئيسية</a>
+      <a href="tools.html">الأدوات</a>
+      <a href="index.html#plans">الباقات</a>
+    </nav>
+    <a class="btn btn-primary header-cta" href="login.html">تسجيل الدخول</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="auth">
+    <h1 id="authTitle">تسجيل الدخول</h1>
+    <div class="auth-tabs" role="tablist">
+      <button type="button" role="tab" id="tabLogin" aria-selected="true">دخول</button>
+      <button type="button" role="tab" id="tabSignup" aria-selected="false">حساب جديد</button>
+    </div>
+    <form id="authForm" novalidate>
+      <div id="nameField" hidden>
+        <label class="field-label" for="fullName">الاسم</label>
+        <input type="text" id="fullName" autocomplete="name">
+      </div>
+      <div>
+        <label class="field-label" for="email">البريد الإلكتروني</label>
+        <input type="email" id="email" autocomplete="email" dir="ltr">
+      </div>
+      <div>
+        <label class="field-label" for="password">كلمة المرور</label>
+        <input type="password" id="password" autocomplete="current-password" dir="ltr">
+      </div>
+      <button class="btn btn-primary btn-lg" type="submit" id="submitBtn">دخول</button>
+    </form>
+    <p class="notice" id="authNotice">نظام الحسابات قيد الإعداد. يمكنك الآن استخدام الأدوات المجانية مباشرة من <a href="tools.html">صفحة الأدوات</a>.</p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>رفيق المعلم، أحد مشاريع رافد لتصميم البرمجيات الخاصة</span>
+    <span>© 2026</span>
+  </div>
+</footer>
+
+<script>
+  const tabLogin = document.getElementById('tabLogin');
+  const tabSignup = document.getElementById('tabSignup');
+  function setMode(signup) {
+    tabLogin.setAttribute('aria-selected', String(!signup));
+    tabSignup.setAttribute('aria-selected', String(signup));
+    document.getElementById('nameField').hidden = !signup;
+    document.getElementById('authTitle').textContent = signup ? 'إنشاء حساب مجاني' : 'تسجيل الدخول';
+    document.getElementById('submitBtn').textContent = signup ? 'إنشاء الحساب' : 'دخول';
+    document.getElementById('password').autocomplete = signup ? 'new-password' : 'current-password';
+  }
+  tabLogin.addEventListener('click', () => setMode(false));
+  tabSignup.addEventListener('click', () => setMode(true));
+  document.getElementById('authForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const n = document.getElementById('authNotice');
+    n.textContent = 'لم يُفعَّل التسجيل بعد. سيعمل هذا النموذج بعد ربط الموقع بالخادم.';
+  });
+</script>
+</body>
+</html>

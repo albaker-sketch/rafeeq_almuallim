@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>عجلة الأسماء</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zain:wght@400;700;800&family=Readex+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../assets/css/main.css">
+<link rel="stylesheet" href="../assets/css/tool.css">
+<style>
+  .wheel-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .wheel-layout { grid-template-columns: 1fr; }
+  }
+
+  .stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    padding: 28px 20px;
+  }
+
+  .stage-tools {
+    position: absolute;
+    top: 14px;
+    inset-inline-start: 14px;
+    display: flex;
+    gap: 8px;
+    z-index: 3;
+  }
+
+  .wheel-box {
+    position: relative;
+    width: min(100%, 560px);
+    aspect-ratio: 1;
+    max-width: 100%;
+  }
+
+  .stage:fullscreen .wheel-box,
+  .stage.pseudo-full .wheel-box {
+    width: min(92vw, 78vh);
+  }
+
+  .stage:fullscreen,
+  .stage.pseudo-full {
+    justify-content: center;
+  }
+
+  #wheel {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: pointer;
+  }
+
+  /* المؤشر أعلى العجلة */
+  .pointer {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 44px;
+    height: 54px;
+    z-index: 2;
+    filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .25));
+    transform-origin: 50% 20%;
+  }
+
+  .pointer.is-ticking { animation: flick .12s ease-out; }
+  @keyframes flick { 40% { transform: translateX(-50%) rotate(-14deg); } }
+
+  .spin-btn { min-width: 220px; font-size: 1.35rem; padding: 16px 40px; }
+
+  /* بطاقة النتيجة */
+  .result {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
+    backdrop-filter: blur(3px);
+    z-index: 5;
+    border-radius: inherit;
+    padding: 16px;
+  }
+
+  .result-card {
+    background: var(--surface);
+    border: 2px solid var(--gold);
+    border-radius: 22px;
+    padding: 32px clamp(24px, 5vw, 64px);
+    text-align: center;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, .18);
+    animation: pop .45s cubic-bezier(.2, 1.4, .4, 1);
+    max-width: 100%;
+  }
+
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } }
+
+  .result-label { color: var(--muted); font-size: 1.05rem; }
+
+  .result-name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(3.5rem, 11vw, 8rem);
+    line-height: 1.1;
+    color: var(--brand);
+    margin-block: 8px 20px;
+    overflow-wrap: anywhere;
+  }
+
+  .result-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  /* اللوحة الجانبية */
+  .side { display: flex; flex-direction: column; gap: 16px; }
+
+  #names { min-height: 260px; resize: vertical; line-height: 1.8; }
+
+  .count {
+    font-family: var(--font-body);
+    font-size: .85rem;
+    font-weight: 500;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .row .btn { padding: 8px 14px; font-size: .9rem; }
+
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    font-size: .93rem;
+    cursor: pointer;
+  }
+  .check input { width: 20px; height: 20px; accent-color: var(--brand); }
+
+  .picked {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .picked li {
+    background: var(--surface-2);
+    border-radius: 999px;
+    padding: 3px 12px;
+    font-size: .9rem;
+  }
+
+  .picked li b {
+    font-weight: 500;
+    color: var(--muted);
+    font-size: .8rem;
+    margin-inline-end: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .empty-note { color: var(--muted); font-size: .9rem; }
+
+  .stage-msg {
+    color: var(--muted);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="رفيق المعلم، الصفحة الرئيسية">
+      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="11" fill="#0C7051"/><path d="M9 13.5c3.7-1.5 7.5-1.2 11 1.2V29c-3.5-2.3-7.3-2.6-11-1.2z" fill="#fff"/><path d="M31 13.5c-3.7-1.5-7.5-1.2-11 1.2V29c3.5-2.3 7.3-2.6 11-1.2z" fill="#fff" opacity=".75"/><circle cx="31" cy="9.5" r="4" fill="#C0913F"/></svg>
+      <span class="brand-name">رفيق المعلم<span class="brand-by">من رافد</span></span>
+    </a>
+    <nav class="main-nav" aria-label="القائمة الرئيسية">
+      <a href="../index.html">الرئيسية</a>
+      <a href="../tools.html" aria-current="page">الأدوات</a>
+      <a href="../index.html#plans">الباقات</a>
+    </nav>
+    <a class="btn btn-primary header-cta" href="../login.html">تسجيل الدخول</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="tool-bar">
+    <a class="back-link" href="../tools.html">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      الأدوات
+    </a>
+    <h1>عجلة الأسماء</h1>
+    <span class="tag tag-free">مجانية</span>
+  </div>
+
+  <div class="wheel-layout">
+    <section class="stage" id="stage" aria-label="العجلة">
+      <div class="stage-tools">
+        <button class="icon-btn" type="button" id="soundBtn" aria-pressed="true" title="الصوت">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="sound-wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="sound-off" d="m16 9 6 6m0-6-6 6" hidden/></svg>
+        </button>
+        <button class="icon-btn" type="button" id="fullBtn" title="ملء الشاشة (F)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+        </button>
+      </div>
+
+      <div class="wheel-box">
+        <svg class="pointer" id="pointer" viewBox="0 0 44 54" aria-hidden="true"><path d="M22 52 4 14a18 18 0 1 1 36 0z" fill="#C0913F"/><circle cx="22" cy="18" r="7" fill="#fff"/></svg>
+        <canvas id="wheel" aria-label="عجلة أسماء الطلاب، اضغط لتدويرها"></canvas>
+      </div>
+
+      <p class="stage-msg" id="stageMsg" hidden>أضف اسمين على الأقل في قائمة الطلاب لتدوير العجلة.</p>
+
+      <button class="btn btn-primary spin-btn" type="button" id="spinBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+        أدِر العجلة
+      </button>
+      <p class="kbd-hint">اختصار: <kbd>مسافة</kbd> للتدوير، <kbd>F</kbd> لملء الشاشة</p>
+
+      <div class="result" id="result" hidden>
+        <div class="result-card" role="dialog" aria-live="assertive" aria-labelledby="resultName">
+          <div class="result-label">الطالب المشارك</div>
+          <div class="result-name" id="resultName"></div>
+          <div class="result-actions">
+            <button class="btn btn-primary btn-lg" type="button" id="againBtn">اختيار طالب آخر</button>
+            <button class="btn btn-ghost btn-lg" type="button" id="closeBtn">إغلاق</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="panel">
+        <h2>قائمة الطلاب <span class="count" id="count"></span></h2>
+        <label class="field-label" for="names">اكتب اسم كل طالب في سطر مستقل، أو الصق القائمة من ملف.</label>
+        <textarea id="names" spellcheck="false"></textarea>
+        <div class="row">
+          <button class="btn btn-ghost" type="button" id="shuffleBtn">خلط الترتيب</button>
+          <button class="btn btn-ghost" type="button" id="clearBtn">مسح القائمة</button>
+        </div>
+        <label class="check">
+          <input type="checkbox" id="removePicked" checked>
+          استبعاد الطالب من العجلة بعد اختياره
+        </label>
+      </div>
+
+      <div class="panel">
+        <h2>
+          شاركوا
+          <button class="btn btn-ghost" type="button" id="resetPickedBtn" style="padding:6px 12px;font-size:.85rem">إعادة الجميع للعجلة</button>
+        </h2>
+        <ol class="picked" id="picked"></ol>
+        <p class="empty-note" id="pickedEmpty">لم يُختر أحد بعد.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>رفيق المعلم، أحد مشاريع رافد لتصميم البرمجيات الخاصة</span>
+    <span>© 2026</span>
+  </div>
+</footer>
+
+<script src="../assets/js/common.js"></script>
+<script>
+(function () {
+  const { store, sound, toggleFullscreen } = window.Rafeeq;
+
+  const SAMPLE = ['عبدالله', 'سارة', 'يوسف', 'نورة', 'خالد', 'مريم', 'فهد', 'ريم', 'عمر', 'لطيفة', 'حمد', 'جود', 'سلطان', 'دانة', 'راشد', 'هيا'];
+  const COLORS = ['#0C7051', '#C0913F', '#0D4261', '#129B82', '#8067A4', '#DD7877', '#4194B3', '#E9C56B', '#5A895A', '#1490A0'];
+  const LIGHT = new Set(['#E9C56B']);
+
+  const el = id => document.getElementById(id);
+  const canvas = el('wheel');
+  const ctx = canvas.getContext('2d');
+  const namesInput = el('names');
+
+  let picked = store.get('wheel:picked', []);
+  let rotation = 0;
+  let spinning = false;
+  let lastPick = null;
+
+  namesInput.value = store.get('wheel:names', SAMPLE).join('\n');
+  el('removePicked').checked = store.get('wheel:removePicked', true);
+
+  function allNames() {
+    return namesInput.value.split('\n').map(s => s.trim()).filter(Boolean);
+  }
+
+  // الأسماء الظاهرة على العجلة (مع استبعاد من شارك إن كان الخيار مفعلًا)
+  function pool() {
+    const names = allNames();
+    if (!el('removePicked').checked) return names;
+    const left = names.slice();
+    picked.forEach(p => {
+      const i = left.indexOf(p);
+      if (i > -1) left.splice(i, 1);
+    });
+    return left;
+  }
+
+  function colorFor(i, n) {
+    let c = COLORS[i % COLORS.length];
+    // تجنب تطابق لون أول شريحة وآخر شريحة
+    if (i === n - 1 && n > 1 && c === COLORS[0]) c = COLORS[2];
+    return c;
+  }
+
+  function fontStack() {
+    return '"Readex Pro", Tahoma, sans-serif';
+  }
+
+  function draw() {
+    const size = canvas.clientWidth;
+    const dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== Math.round(size * dpr)) {
+      canvas.width = Math.round(size * dpr);
+      canvas.height = Math.round(size * dpr);
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const c = size / 2;
+    const r = c - 6;
+    const names = pool();
+    const n = names.length;
+    const styles = getComputedStyle(document.documentElement);
+    ctx.clearRect(0, 0, size, size);
+
+    // الإطار الخارجي
+    ctx.beginPath();
+    ctx.arc(c, c, r + 4, 0, Math.PI * 2);
+    ctx.fillStyle = styles.getPropertyValue('--line').trim() || '#D7E2DC';
+    ctx.fill();
+
+    if (n === 0) {
+      ctx.beginPath();
+      ctx.arc(c, c, r, 0, Math.PI * 2);
+      ctx.fillStyle = styles.getPropertyValue('--surface-2').trim();
+      ctx.fill();
+    }
+
+    const step = (Math.PI * 2) / Math.max(n, 1);
+    const fontSize = Math.max(11, Math.min(size / 17, (Math.PI * r * 0.9) / Math.max(n, 1)));
+
+    for (let i = 0; i < n; i++) {
+      const a0 = rotation + i * step;
+      const color = colorFor(i, n);
+      ctx.beginPath();
+      ctx.moveTo(c, c);
+      ctx.arc(c, c, r, a0, a0 + step);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      if (n > 1) {
+        ctx.strokeStyle = 'rgba(255,255,255,.55)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      ctx.save();
+      ctx.translate(c, c);
+      const mid = a0 + step / 2;
+      const norm = ((mid % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      // في النصف الأيسر نقلب النص حتى لا يظهر مقلوبًا
+      const flip = norm > Math.PI / 2 && norm < Math.PI * 1.5;
+      ctx.rotate(flip ? mid + Math.PI : mid);
+      ctx.fillStyle = LIGHT.has(color) ? '#2B2410' : '#FFFFFF';
+      ctx.font = `600 ${fontSize}px ${fontStack()}`;
+      ctx.textAlign = flip ? 'left' : 'right';
+      ctx.textBaseline = 'middle';
+      ctx.direction = 'rtl';
+      let label = names[i];
+      const maxW = r * 0.68;
+      while (ctx.measureText(label).width > maxW && label.length > 2) label = label.slice(0, -1);
+      if (label !== names[i]) label += '…';
+      ctx.fillText(label, flip ? -(r - 16) : r - 16, 0);
+      ctx.restore();
+    }
+
+    // المحور
+    ctx.beginPath();
+    ctx.arc(c, c, Math.max(18, r * 0.09), 0, Math.PI * 2);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#C0913F';
+    ctx.stroke();
+
+    el('count').textContent = el('removePicked').checked && picked.length
+      ? `${n} من ${allNames().length}`
+      : `${allNames().length} طالب`;
+    const tooFew = n < 2;
+    el('stageMsg').hidden = !tooFew;
+    el('stageMsg').textContent = allNames().length >= 2 && tooFew
+      ? 'شارك جميع الطلاب. اضغط «إعادة الجميع للعجلة» لبدء جولة جديدة.'
+      : 'أضف اسمين على الأقل في قائمة الطلاب لتدوير العجلة.';
+    el('spinBtn').disabled = tooFew || spinning;
+  }
+
+  // مؤشر الشريحة الواقعة تحت السهم العلوي
+  function indexAtPointer(rot, n) {
+    const step = (Math.PI * 2) / n;
+    let a = (-Math.PI / 2 - rot) % (Math.PI * 2);
+    if (a < 0) a += Math.PI * 2;
+    return Math.floor(a / step) % n;
+  }
+
+  function randomInt(max) {
+    try {
+      const buf = new Uint32Array(1);
+      crypto.getRandomValues(buf);
+      return buf[0] % max;
+    } catch (e) {
+      return Math.floor(Math.random() * max);
+    }
+  }
+
+  function spin() {
+    const names = pool();
+    const n = names.length;
+    if (spinning || n < 2) return;
+    spinning = true;
+    el('spinBtn').disabled = true;
+    el('result').hidden = true;
+
+    const step = (Math.PI * 2) / n;
+    const target = randomInt(n);
+    const jitter = (Math.random() - 0.5) * step * 0.7;
+    const full = Math.PI * 2;
+    // الزاوية التي تجعل منتصف الشريحة المختارة تحت المؤشر
+    let end = -Math.PI / 2 - (target + 0.5) * step + jitter;
+    const turns = 6 + randomInt(3);
+    const base = rotation - (rotation % full);
+    end = base + turns * full + ((end % full) + full) % full;
+    if (end - rotation < 5 * full) end += full;
+
+    const start = rotation;
+    const duration = 5200 + randomInt(1200);
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const t0 = performance.now();
+    let lastIdx = indexAtPointer(rotation, n);
+    const pointer = el('pointer');
+
+    function frame(now) {
+      const t = reduced ? 1 : Math.min(1, (now - t0) / duration);
+      const eased = 1 - Math.pow(1 - t, 4);
+      rotation = start + (end - start) * eased;
+      draw();
+      const idx = indexAtPointer(rotation, n);
+      if (idx !== lastIdx) {
+        lastIdx = idx;
+        sound.tick();
+        pointer.classList.remove('is-ticking');
+        void pointer.offsetWidth;
+        pointer.classList.add('is-ticking');
+      }
+      if (t < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        rotation = rotation % full;
+        spinning = false;
+        finish(names[indexAtPointer(rotation, n)]);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function finish(name) {
+    lastPick = name;
+    picked.push(name);
+    store.set('wheel:picked', picked);
+    el('resultName').textContent = name;
+    el('result').hidden = false;
+    sound.win();
+    renderPicked();
+    el('againBtn').focus();
+  }
+
+  function closeResult() {
+    el('result').hidden = true;
+    draw();
+  }
+
+  function renderPicked() {
+    el('picked').innerHTML = picked.map((p, i) => `<li><b>${i + 1}</b>${escapeHtml(p)}</li>`).join('');
+    el('pickedEmpty').hidden = picked.length > 0;
+    el('resetPickedBtn').hidden = picked.length === 0;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  }
+
+  // الأحداث
+  el('spinBtn').addEventListener('click', spin);
+  canvas.addEventListener('click', spin);
+  el('againBtn').addEventListener('click', () => { closeResult(); spin(); });
+  el('closeBtn').addEventListener('click', closeResult);
+
+  namesInput.addEventListener('input', () => {
+    store.set('wheel:names', allNames());
+    draw();
+  });
+
+  el('removePicked').addEventListener('change', e => {
+    store.set('wheel:removePicked', e.target.checked);
+    draw();
+  });
+
+  el('shuffleBtn').addEventListener('click', () => {
+    const arr = allNames();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = randomInt(i + 1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    namesInput.value = arr.join('\n');
+    store.set('wheel:names', arr);
+    draw();
+  });
+
+  el('clearBtn').addEventListener('click', () => {
+    namesInput.value = '';
+    store.set('wheel:names', []);
+    picked = [];
+    store.set('wheel:picked', picked);
+    renderPicked();
+    draw();
+    namesInput.focus();
+  });
+
+  el('resetPickedBtn').addEventListener('click', () => {
+    picked = [];
+    store.set('wheel:picked', picked);
+    renderPicked();
+    draw();
+  });
+
+  function syncSoundBtn() {
+    const btn = el('soundBtn');
+    btn.setAttribute('aria-pressed', String(sound.enabled));
+    btn.querySelector('.sound-wave').toggleAttribute('hidden', !sound.enabled);
+    btn.querySelector('.sound-off').toggleAttribute('hidden', sound.enabled);
+    btn.title = sound.enabled ? 'كتم الصوت' : 'تشغيل الصوت';
+  }
+  el('soundBtn').addEventListener('click', () => { sound.toggle(); syncSoundBtn(); });
+  el('fullBtn').addEventListener('click', () => toggleFullscreen(el('stage')));
+
+  document.addEventListener('keydown', e => {
+    const typing = /^(TEXTAREA|INPUT)$/.test(document.activeElement.tagName);
+    if (typing) return;
+    // تفادي تنفيذ الأمر مرتين إذا كان التركيز على زر
+    if (e.code === 'Space' && document.activeElement.tagName === 'BUTTON') document.activeElement.blur();
+    if (e.code === 'Space' || (e.key === 'Enter' && document.activeElement === document.body)) {
+      e.preventDefault();
+      if (!el('result').hidden) closeResult();
+      spin();
+    } else if (e.key === 'f' || e.key === 'F' || e.key === 'ب') {
+      toggleFullscreen(el('stage'));
+    } else if (e.key === 'Escape') {
+      el('stage').classList.remove('pseudo-full');
+      if (!el('result').hidden) closeResult();
+    }
+  });
+
+  window.addEventListener('resize', draw);
+  document.addEventListener('fullscreenchange', () => requestAnimationFrame(draw));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+
+  syncSoundBtn();
+  renderPicked();
+  draw();
+})();
+</script>
+</body>
+</html>
