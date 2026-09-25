@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>عجلة الأسماء</title>
+<title>اختيار الطالب</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zain:wght@400;700;800&family=Readex+Pro:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="../assets/css/main.css">
 <link rel="stylesheet" href="../assets/css/tool.css">
+<link rel="stylesheet" href="../assets/css/picker.css">
 <style>
   .wheel-layout {
     display: grid;
@@ -80,74 +81,6 @@
 
   .spin-btn { min-width: 220px; font-size: 1.35rem; padding: 16px 40px; }
 
-  /* التبديل بين العجلة والقرعة */
-  .mode-switch {
-    display: inline-flex;
-    background: var(--surface-2);
-    border-radius: 999px;
-    padding: 4px;
-  }
-  .mode-switch button {
-    font: inherit;
-    font-weight: 600;
-    border: 0;
-    background: transparent;
-    color: var(--muted);
-    padding: 8px 18px;
-    border-radius: 999px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .mode-switch button svg { width: 18px; height: 18px; }
-  .mode-switch button[aria-pressed="true"] { background: var(--surface); color: var(--brand); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-
-  /* وضع القرعة: بطاقة تعرض الاسم كاملًا */
-  .draw-box {
-    width: min(100%, 760px);
-    min-height: 340px;
-    display: grid;
-    place-items: center;
-  }
-  .stage:fullscreen .draw-box,
-  .stage.pseudo-full .draw-box { width: min(94vw, 1200px); min-height: 55vh; }
-
-  .draw-card {
-    width: 100%;
-    min-height: 300px;
-    border-radius: 24px;
-    background: #0F3B2E;
-    border: 10px solid #D9CBB0;
-    color: #F2F6F3;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 32px 24px;
-    text-align: center;
-    position: relative;
-  }
-  .stage:fullscreen .draw-card,
-  .stage.pseudo-full .draw-card { min-height: 55vh; }
-
-  .draw-label { color: #A9C7BB; font-size: 1.1rem; min-height: 1.5em; }
-  .draw-name {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: clamp(2.6rem, 7vw, 5.6rem);
-    line-height: 1.15;
-    overflow-wrap: anywhere;
-    text-wrap: balance;
-  }
-  .stage:fullscreen .draw-name,
-  .stage.pseudo-full .draw-name { font-size: clamp(3rem, 8vw, 8rem); }
-  .draw-name.is-idle { color: #6F9A8A; font-size: clamp(2rem, 5vw, 3.4rem); }
-  .draw-name.is-rolling { color: #E6EFEA; }
-  .draw-card.is-winner { border-color: #C0913F; }
-  .draw-card.is-winner .draw-name { color: #F4D28F; animation: pop .45s cubic-bezier(.2, 1.4, .4, 1); }
-  .draw-sub { color: #A9C7BB; font-size: .95rem; font-variant-numeric: tabular-nums; }
 
   /* بطاقة النتيجة */
   .result {
@@ -278,12 +211,12 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
       الأدوات
     </a>
-    <h1>عجلة الأسماء</h1>
+    <h1>اختيار الطالب</h1>
     <span class="tag tag-free">مجانية</span>
   </div>
 
   <div class="wheel-layout">
-    <section class="stage" id="stage" aria-label="العجلة">
+    <section class="stage" id="stage" aria-label="اختيار الطالب">
       <div class="stage-tools">
         <button class="icon-btn" type="button" id="soundBtn" aria-pressed="true" title="الصوت">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="sound-wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="sound-off" d="m16 9 6 6m0-6-6 6" hidden/></svg>
@@ -294,31 +227,16 @@
       </div>
 
       <p class="stage-class" id="stageClass" hidden></p>
-      <div class="mode-switch" role="group" aria-label="طريقة الاختيار">
-        <button type="button" data-mode="wheel" aria-pressed="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6.4 6.4M12 12 5.6 18.4M12 12H3"/></svg>
-          العجلة
-        </button>
-        <button type="button" data-mode="draw" aria-pressed="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h10M7 14h6"/></svg>
-          القرعة
-        </button>
-      </div>
+      <div class="stage-mode" id="stageMode"></div>
 
-      <div class="draw-box" id="drawBox" hidden>
-        <div class="draw-card" id="drawCard">
-          <div class="draw-label" id="drawLabel"></div>
-          <div class="draw-name is-idle" id="drawName">اضغط «اسحب اسمًا»</div>
-          <div class="draw-sub" id="drawSub"></div>
-        </div>
-      </div>
+      <div class="mode-view" id="modeView" hidden></div>
 
       <div class="wheel-box" id="wheelBox">
         <svg class="pointer" id="pointer" viewBox="0 0 44 54" aria-hidden="true"><path d="M22 52 4 14a18 18 0 1 1 36 0z" fill="#C0913F"/><circle cx="22" cy="18" r="7" fill="#fff"/></svg>
         <canvas id="wheel" aria-label="عجلة أسماء الطلاب، اضغط لتدويرها"></canvas>
       </div>
 
-      <p class="stage-msg" id="stageMsg" hidden>أضف اسمين على الأقل في قائمة الطلاب لتدوير العجلة.</p>
+      <p class="stage-msg" id="stageMsg" hidden>أضف اسمين على الأقل في قائمة الطلاب.</p>
 
       <button class="btn btn-primary spin-btn" type="button" id="spinBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
@@ -340,6 +258,19 @@
 
     <aside class="side">
       <div class="panel">
+        <h2>طريقة الاختيار</h2>
+        <div class="modes" id="modes" role="group" aria-label="طريقة الاختيار"></div>
+        <p class="mode-desc" id="modeDesc"></p>
+        <div class="mode-opts" id="tickerOpts" hidden>
+          <label class="field-label" for="tickerDir">اتجاه الشريط</label>
+          <select id="tickerDir" class="class-select">
+            <option value="v">رأسي (من أعلى لأسفل)</option>
+            <option value="h">أفقي (من جانب لآخر)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="panel">
         <h2>قائمة الطلاب <span class="count" id="count"></span></h2>
         <label class="field-label" for="classSelect">الصف</label>
         <select id="classSelect" class="class-select"></select>
@@ -350,8 +281,8 @@
           <button class="btn btn-ghost" type="button" id="shuffleBtn">خلط الترتيب</button>
           <button class="btn btn-ghost" type="button" id="clearBtn">مسح القائمة</button>
         </div>
-        <div id="labelModeWrap" style="margin-top:14px">
-          <label class="field-label" for="labelMode">الاسم الظاهر على العجلة</label>
+        <div style="margin-top:14px">
+          <label class="field-label" for="labelMode">الاسم الظاهر أثناء الاختيار (النتيجة تظهر بالاسم كاملًا)</label>
           <select id="labelMode" class="class-select">
             <option value="2">الاسم الأول والثاني</option>
             <option value="1">الاسم الأول فقط</option>
@@ -360,14 +291,14 @@
         </div>
         <label class="check">
           <input type="checkbox" id="removePicked" checked>
-          استبعاد الطالب من العجلة بعد اختياره
+          استبعاد الطالب بعد اختياره حتى يشارك الجميع
         </label>
       </div>
 
       <div class="panel">
         <h2>
           شاركوا
-          <button class="btn btn-ghost" type="button" id="resetPickedBtn" style="padding:6px 12px;font-size:.85rem">إعادة الجميع للعجلة</button>
+          <button class="btn btn-ghost" type="button" id="resetPickedBtn" style="padding:6px 12px;font-size:.85rem">إعادة الجميع</button>
         </h2>
         <ol class="picked" id="picked"></ol>
         <p class="empty-note" id="pickedEmpty">لم يُختر أحد بعد.</p>
@@ -381,6 +312,7 @@
 
 <script src="../assets/js/common.js"></script>
 <script src="../assets/js/classes-store.js"></script>
+<script src="../assets/js/picker-modes.js"></script>
 <script>
 (function () {
   const { store, sound, toggleFullscreen } = window.Rafeeq;
@@ -421,7 +353,7 @@
     el('stageClass').hidden = !isClass;
     el('stageClass').textContent = isClass ? Classes.label(cls) : '';
     picked = store.get(pickedKey(), []);
-    if (typeof resetDrawCard === 'function') resetDrawCard();
+    viewWinner = false;
     renderPicked();
     draw();
   }
@@ -504,10 +436,10 @@
     const tooFew = n < 2;
     el('stageMsg').hidden = !tooFew;
     el('stageMsg').textContent = allNames().length >= 2 && tooFew
-      ? 'شارك جميع الطلاب. اضغط «إعادة الجميع للعجلة» لبدء جولة جديدة.'
-      : 'أضف اسمين على الأقل في قائمة الطلاب لتدوير العجلة.';
+      ? 'شارك جميع الطلاب. اضغط «إعادة الجميع» لبدء جولة جديدة.'
+      : 'أضف اسمين على الأقل في قائمة الطلاب.';
     el('spinBtn').disabled = tooFew || spinning;
-    if (mode === 'draw' && !spinning && !drawWinner) renderDrawIdle(n);
+    if (mode !== 'wheel' && !spinning && !viewWinner) renderView();
   }
 
   function draw() {
@@ -614,99 +546,96 @@
     }
   }
 
-  // ---------- التبديل بين العجلة والقرعة ----------
+  // ---------- طرق الاختيار ----------
+  const Modes = window.PickerModes;
+  const MODE_IDS = Modes.list.map(m => m.id);
   let mode = store.get('wheel:mode', 'wheel');
-  let drawWinner = false;
+  if (mode === 'draw') mode = 'digital'; // اسم الطريقة القديم
+  if (!MODE_IDS.includes(mode)) mode = 'wheel';
+  let viewWinner = false;
+  const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function renderModeTiles() {
+    el('modes').innerHTML = Modes.list.map(m =>
+      `<button type="button" class="mode-tile" data-mode="${m.id}" aria-pressed="${m.id === mode}" title="${m.desc}">${m.icon}<span>${m.name}</span></button>`).join('');
+  }
+
+  function modeCtx(names, target) {
+    return {
+      names,
+      labels: wheelLabels(names),
+      target,
+      sound,
+      randomInt,
+      reduced: reducedMotion(),
+      opts: { tickerDir: el('tickerDir').value }
+    };
+  }
+
+  // عرض الحالة الساكنة للطريقة الحالية
+  function renderView() {
+    if (mode === 'wheel') return;
+    const names = pool();
+    const view = el('modeView');
+    if (names.length < 2) { view.innerHTML = ''; return; }
+    Modes.impl[mode].render(view, modeCtx(names, 0));
+  }
 
   function setMode(m) {
     if (spinning) return;
-    mode = m === 'draw' ? 'draw' : 'wheel';
+    mode = MODE_IDS.includes(m) ? m : 'wheel';
     store.set('wheel:mode', mode);
-    document.querySelectorAll('.mode-switch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+    const info = Modes.list.find(x => x.id === mode);
+    document.querySelectorAll('.mode-tile').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+    el('modeDesc').textContent = info.desc;
+    el('stageMode').innerHTML = info.icon + '<span>' + info.name + '</span>';
+    el('tickerOpts').hidden = mode !== 'ticker';
     el('wheelBox').hidden = mode !== 'wheel';
-    el('drawBox').hidden = mode !== 'draw';
-    el('labelModeWrap').hidden = mode !== 'wheel';
-    el('spinLabel').textContent = mode === 'wheel' ? 'أدِر العجلة' : 'اسحب اسمًا';
+    el('modeView').hidden = mode === 'wheel';
+    el('spinLabel').textContent = mode === 'wheel' ? 'أدِر العجلة' : 'اختر طالبًا';
     el('result').hidden = true;
-    drawWinner = false;
-    el('drawCard').classList.remove('is-winner');
+    viewWinner = false;
     draw();
+    renderView();
   }
 
-  function studentsCount(n) {
-    if (n === 1) return 'طالب واحد';
-    if (n === 2) return 'طالبان';
-    if (n <= 10) return n + ' طلاب';
-    return n + ' طالبًا';
-  }
-
-  function renderDrawIdle(n) {
-    const nameEl = el('drawName');
-    nameEl.className = 'draw-name is-idle';
-    nameEl.textContent = n >= 2 ? 'من سيشارك الآن؟' : 'لا توجد أسماء كافية';
-    el('drawLabel').textContent = '';
-    el('drawSub').textContent = n >= 2 ? `${studentsCount(n)} في القرعة` : '';
-  }
-
-  function spinDraw() {
+  async function runMode() {
     const names = pool();
     const n = names.length;
     if (spinning || n < 2) return;
     spinning = true;
-    drawWinner = false;
+    viewWinner = false;
     el('spinBtn').disabled = true;
-    const card = el('drawCard');
-    const nameEl = el('drawName');
-    card.classList.remove('is-winner');
-    nameEl.className = 'draw-name is-rolling';
-    el('drawLabel').textContent = 'جارٍ السحب…';
-    el('drawSub').textContent = '';
-
+    el('result').hidden = true;
+    const impl = Modes.impl[mode];
     const target = randomInt(n);
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const steps = reduced ? 1 : 26 + randomInt(6);
-    let step = 0;
-    let last = -1;
-
-    function next() {
-      step++;
-      let idx;
-      if (step >= steps) {
-        idx = target;
-      } else {
-        do { idx = randomInt(n); } while (idx === last && n > 1);
-      }
-      last = idx;
-      nameEl.textContent = names[idx];
-      sound.tick();
-      if (step < steps) {
-        // يبدأ سريعًا ثم يتباطأ تدريجيًا قبل التوقف
-        const p = step / steps;
-        setTimeout(next, 45 + Math.pow(p, 3) * 480);
-      } else {
-        spinning = false;
-        drawWinner = true;
-        card.classList.add('is-winner');
-        nameEl.className = 'draw-name';
-        void nameEl.offsetWidth;
-        el('drawLabel').textContent = 'الطالب المشارك';
-        recordPick(names[target]);
-        sound.win();
-        const left = pool().length;
-        el('drawSub').textContent = el('removePicked').checked ? `بقي ${studentsCount(left)} في القرعة` : '';
-        el('spinBtn').disabled = left < 2;
-      }
+    const c = modeCtx(names, target);
+    const view = el('modeView');
+    impl.render(view, c);
+    await new Promise(r => requestAnimationFrame(r));
+    try {
+      await impl.run(view, c);
+    } catch (e) { /* نكمل بإظهار النتيجة */ }
+    spinning = false;
+    viewWinner = true;
+    const name = names[target];
+    if (impl.reveals) {
+      recordPick(name);
+      sound.win();
+      updateStatus(pool().length);
+    } else {
+      // نترك لحظة ليرى الصف النتيجة داخل الطريقة، ثم تظهر بطاقة الاسم كاملًا
+      recordPick(name);
+      sound.win();
+      setTimeout(() => {
+        if (viewWinner && !spinning) { el('resultName').textContent = name; el('result').hidden = false; el('againBtn').focus(); }
+      }, 1300);
+      updateStatus(pool().length);
     }
-    next();
-  }
-
-  function resetDrawCard() {
-    drawWinner = false;
-    el('drawCard').classList.remove('is-winner');
   }
 
   function choose() {
-    if (mode === 'draw') spinDraw(); else spin();
+    if (mode === 'wheel') spin(); else runMode();
   }
 
   function spin() {
@@ -768,6 +697,7 @@
 
   function finish(name) {
     recordPick(name);
+    updateStatus(pool().length);
     el('resultName').textContent = name;
     el('result').hidden = false;
     sound.win();
@@ -777,6 +707,7 @@
 
   function closeResult() {
     el('result').hidden = true;
+    if (mode !== 'wheel') viewWinner = false;
     draw();
   }
 
@@ -793,10 +724,13 @@
   // الأحداث
   el('spinBtn').addEventListener('click', choose);
   canvas.addEventListener('click', spin);
-  document.querySelectorAll('.mode-switch button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  el('modes').addEventListener('click', e => { const b = e.target.closest('.mode-tile'); if (b) setMode(b.dataset.mode); });
+  el('tickerDir').value = store.get('wheel:tickerDir', 'v');
+  el('tickerDir').addEventListener('change', e => { store.set('wheel:tickerDir', e.target.value); viewWinner = false; renderView(); });
+  window.addEventListener('resize', () => { if (!spinning && !viewWinner) renderView(); });
   el('labelMode').value = store.get('wheel:labelMode', '2');
   el('labelMode').addEventListener('change', e => { store.set('wheel:labelMode', e.target.value); draw(); });
-  el('againBtn').addEventListener('click', () => { closeResult(); spin(); });
+  el('againBtn').addEventListener('click', () => { closeResult(); choose(); });
   el('closeBtn').addEventListener('click', closeResult);
 
   namesInput.addEventListener('input', () => {
@@ -832,7 +766,7 @@
   });
 
   el('resetPickedBtn').addEventListener('click', () => {
-    resetDrawCard();
+    viewWinner = false;
     picked = [];
     store.set(pickedKey(), picked);
     renderPicked();
@@ -873,6 +807,7 @@
   syncSoundBtn();
   const startSource = initClassSelect();
   loadSource(startSource);
+  renderModeTiles();
   setMode(mode);
   if (!Classes.all().length) {
     el('classNote').hidden = false;
