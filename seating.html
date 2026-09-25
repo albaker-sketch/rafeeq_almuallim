@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مخطط الجلوس</title>
+<meta name="description" content="مخطط جلوس الطلاب الذكي: أشكال صفوف متعددة، طرق توزيع وقواعد، تعديل بالسحب والإفلات، وخطة انتقال منظمة بين المخططات.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zain:wght@400;700;800&family=Readex+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/css/main.css">
+<link rel="stylesheet" href="assets/css/tool.css">
+<link rel="stylesheet" href="assets/css/seating.css">
+</head>
+<body>
+
+<header id="siteHeader" data-base="" data-page="seating"></header>
+
+<main class="seat-page">
+  <!-- الشريط العلوي -->
+  <div class="st-top" id="stTop">
+    <div class="st-top-group">
+      <label class="st-mini-label" for="classSel">الصف والشعبة</label>
+      <select id="classSel" class="st-select"></select>
+    </div>
+    <div class="st-top-group">
+      <span class="st-mini-label">الحاضرون</span>
+      <b class="st-present" id="presentCount">0</b>
+    </div>
+    <div class="st-top-group st-grow">
+      <label class="st-mini-label" for="docName">اسم المخطط</label>
+      <input type="text" id="docName" class="st-input" maxlength="50">
+    </div>
+    <div class="st-top-actions">
+      <button class="st-btn" type="button" id="undoBtn" title="تراجع (Ctrl+Z)" aria-label="تراجع"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+      <button class="st-btn" type="button" id="redoBtn" title="إعادة (Ctrl+Y)" aria-label="إعادة"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+      <button class="st-btn" type="button" id="libraryBtn" title="المخططات المحفوظة"><svg viewBox="0 0 24 24"><path d="M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v4H4zM14 15h6v4h-6z"/></svg><span>المحفوظة</span></button>
+      <button class="st-btn" type="button" id="fullBtn" title="ملء الشاشة" aria-label="ملء الشاشة"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      <button class="st-btn st-btn-gold" type="button" id="studentViewBtn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg><span>شاشة الطلاب</span></button>
+      <button class="st-btn st-btn-primary" type="button" id="saveBtn"><svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/></svg><span>حفظ</span></button>
+    </div>
+  </div>
+
+  <div class="seat-app" id="seatApp">
+    <!-- مكتبة العناصر -->
+    <aside class="st-lib" aria-label="مكتبة العناصر">
+      <h2>العناصر</h2>
+      <p class="st-hint">اسحب العنصر إلى المخطط أو اضغط لإضافته.</p>
+      <div class="st-lib-list" id="libList"></div>
+    </aside>
+
+    <!-- مساحة التصميم -->
+    <section class="st-canvas-col">
+      <div class="st-toolbar">
+        <div class="st-seg" role="group" aria-label="وضع التعديل">
+          <button type="button" data-mode="students" aria-pressed="true">الطلاب والمقاعد</button>
+          <button type="button" data-mode="furniture" aria-pressed="false">تحرير المخطط</button>
+        </div>
+        <div class="st-tool-group">
+          <button class="st-icon" type="button" id="zoomOut" title="تصغير" aria-label="تصغير"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+          <span class="st-zoom" id="zoomVal">100%</span>
+          <button class="st-icon" type="button" id="zoomIn" title="تكبير" aria-label="تكبير"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button class="st-icon" type="button" id="zoomFit" title="ملاءمة الشاشة" aria-label="ملاءمة"><svg viewBox="0 0 24 24"><path d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6"/></svg></button>
+        </div>
+        <div class="st-tool-group">
+          <button class="st-toggle" type="button" id="tGrid" aria-pressed="true">الشبكة</button>
+          <button class="st-toggle" type="button" id="tSnap" aria-pressed="true">محاذاة تلقائية</button>
+          <button class="st-toggle" type="button" id="tNums" aria-pressed="false">ترقيم المقاعد</button>
+        </div>
+        <div class="st-tool-group st-sel-tools" id="selTools" hidden>
+          <span class="st-sel-count" id="selCount"></span>
+          <button class="st-icon" type="button" data-act="rotL" title="تدوير 15° يسارًا"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+          <button class="st-icon" type="button" data-act="rotR" title="تدوير 15° يمينًا"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button>
+          <button class="st-icon" type="button" data-act="rot90" title="تدوير 90°"><b>90°</b></button>
+          <button class="st-icon" type="button" data-act="capMinus" title="مقاعد أقل للطاولة"><b>−</b></button>
+          <button class="st-icon" type="button" data-act="capPlus" title="مقاعد أكثر للطاولة"><b>+</b></button>
+          <button class="st-icon" type="button" data-act="label" title="تسمية"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
+          <button class="st-icon" type="button" data-act="dup" title="تكرار (Ctrl+D)"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button>
+          <button class="st-icon danger" type="button" data-act="del" title="حذف (Delete)"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+        </div>
+        <button class="st-toggle" type="button" id="selectAll" hidden>تحديد الكل</button>
+      </div>
+
+      <div class="st-stations-bar" id="stationsBar" hidden></div>
+
+      <div class="st-canvas-wrap" id="canvasWrap">
+        <div id="roomHost" role="img" aria-label="مخطط جلوس الصف"></div>
+        <div class="st-popover" id="seatPop" hidden></div>
+      </div>
+
+      <div class="st-report" id="report" hidden></div>
+
+      <div class="st-unseated" id="unseatedBox" hidden>
+        <b>بلا مقعد:</b>
+        <div class="st-unseated-list" id="unseatedList"></div>
+        <span class="st-hint">اسحب الاسم إلى مقعد فارغ.</span>
+      </div>
+
+      <!-- خطة الانتقال -->
+      <section class="st-transition" id="transBox" hidden>
+        <div class="st-trans-head">
+          <h2>خطة الانتقال</h2>
+          <span class="st-hint" id="transSummary"></span>
+          <div class="st-seg" role="group" aria-label="طريقة عرض الانتقال">
+            <button type="button" data-tview="steps" aria-pressed="true">خطوة بخطوة</button>
+            <button type="button" data-tview="anim" aria-pressed="false">حركة متتابعة</button>
+            <button type="button" data-tview="compare" aria-pressed="false">قبل وبعد</button>
+          </div>
+          <button class="st-icon" type="button" id="transClose" title="إغلاق" aria-label="إغلاق خطة الانتقال"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        </div>
+        <ol class="st-steps" id="transSteps"></ol>
+        <div class="st-trans-ctrl">
+          <button class="btn btn-ghost" type="button" id="stepPrev">السابق</button>
+          <button class="btn btn-primary" type="button" id="stepNext">التالي</button>
+          <button class="btn btn-ghost" type="button" id="animPlay">تشغيل الحركة</button>
+          <span class="st-timer" id="transTimer" hidden></span>
+        </div>
+      </section>
+    </section>
+
+    <!-- لوحة الإعدادات -->
+    <aside class="st-panel" aria-label="الإعدادات">
+      <div class="st-tabs" role="tablist">
+        <button type="button" role="tab" data-tab="shape" aria-selected="true">1. الشكل</button>
+        <button type="button" role="tab" data-tab="method" aria-selected="false">2. التوزيع</button>
+        <button type="button" role="tab" data-tab="rules" aria-selected="false">القواعد</button>
+        <button type="button" role="tab" data-tab="students" aria-selected="false">الطلاب</button>
+        <button type="button" role="tab" data-tab="view" aria-selected="false">العرض</button>
+      </div>
+
+      <div class="st-tab" data-pane="shape">
+        <h3>اختر شكل المخطط</h3>
+        <div class="st-types" id="typeList"></div>
+        <div class="st-form" id="shapeForm"></div>
+        <div class="st-summary" id="groupSummary" hidden></div>
+        <button class="btn btn-primary st-wide" type="button" id="buildBtn">إنشاء المخطط وتوزيع الطلاب</button>
+        <p class="st-hint">يُنشئ المخطط بالشكل المختار، ثم يوزّع الطلاب بطريقة التوزيع المحددة، ويجهّز خطة الانتقال من المخطط الحالي.</p>
+      </div>
+
+      <div class="st-tab" data-pane="method" hidden>
+        <h3>اختر طريقة توزيع الطلاب</h3>
+        <div class="st-methods" id="methodList"></div>
+        <div class="st-checks">
+          <label><input type="checkbox" id="optAvoidPrev" checked> منع تكرار الجار أو الشريك السابق</label>
+          <label><input type="checkbox" id="optFront"> أولوية المقاعد الأمامية لمن يحتاج رؤية أو متابعة أكبر</label>
+          <label><input type="checkbox" id="optHeight" checked> مراعاة الطول وخط النظر في قاعة المسرح</label>
+          <label><input type="checkbox" id="optRoles" checked> تعيين أدوار للمجموعات (قائد، كاتب، متحدث، ضابط وقت)</label>
+        </div>
+        <button class="btn btn-primary st-wide" type="button" id="distBtn">إعادة توزيع المقاعد غير المثبتة</button>
+        <div class="st-row2">
+          <button class="btn btn-ghost" type="button" id="undoDistBtn">تراجع عن آخر توزيع</button>
+          <button class="btn btn-ghost" type="button" id="compareBtn">مقارنة بالسابق</button>
+        </div>
+        <button class="btn btn-ghost st-wide" type="button" id="transOpenBtn">عرض خطة الانتقال</button>
+        <p class="st-hint">المقاعد المثبتة (عليها قفل) لا تتغير عند إعادة التوزيع.</p>
+      </div>
+
+      <div class="st-tab" data-pane="rules" hidden>
+        <h3>منع التجاور</h3>
+        <p class="st-hint">اختر طالبين أو أكثر لا يجلسون متجاورين أو في المجموعة نفسها.</p>
+        <select id="sepPick" class="st-multi" multiple size="5" aria-label="طلاب منع التجاور"></select>
+        <button class="btn btn-ghost st-wide" type="button" id="sepAdd">إضافة قاعدة منع</button>
+        <ul class="st-rule-list" id="sepList"></ul>
+
+        <h3>جمع طلاب محددين</h3>
+        <p class="st-hint">يبقى الطلاب المختارون معًا في مجموعة أو زوج واحد (تثبيت الأزواج).</p>
+        <select id="togPick" class="st-multi" multiple size="5" aria-label="طلاب الجمع"></select>
+        <button class="btn btn-ghost st-wide" type="button" id="togAdd">إضافة قاعدة جمع</button>
+        <ul class="st-rule-list" id="togList"></ul>
+
+        <h3>المقاعد المثبتة</h3>
+        <p class="st-hint">اضغط أي مقعد في المخطط لتثبيت طالب فيه، أو تثبيت مجموعة كاملة، أو إخلائه، أو منع استخدامه، أو تحديد بديل عند الغياب.</p>
+        <ul class="st-rule-list" id="pinList"></ul>
+        <p class="st-hint">«منع الجلوس في الخلف» يُحدَّد لكل طالب في تبويب الطلاب.</p>
+      </div>
+
+      <div class="st-tab" data-pane="students" hidden>
+        <h3>الحضور والملف الشخصي</h3>
+        <p class="st-hint">هذه البيانات تظهر للمعلم فقط، ولا تظهر في شاشة الطلاب.</p>
+        <div class="st-stu-tools">
+          <input type="text" id="stuSearch" class="st-input" placeholder="بحث عن طالب">
+          <button class="btn btn-ghost" type="button" id="allPresent">الكل حاضر</button>
+        </div>
+        <div class="st-legend">
+          <span><i class="lv lv1"></i>متقدم</span><span><i class="lv lv2"></i>متوسط</span><span><i class="lv lv3"></i>يحتاج دعمًا</span>
+        </div>
+        <div class="st-stu-list" id="stuList"></div>
+      </div>
+
+      <div class="st-tab" data-pane="view" hidden>
+        <h3>عرض المخطط</h3>
+        <div class="st-form">
+          <label>الأسماء
+            <select id="vNames" class="st-select"><option value="short">مختصرة</option><option value="full">كاملة</option></select>
+          </label>
+          <label>حجم بطاقات الطلاب
+            <select id="vCard" class="st-select"><option value="s">صغير</option><option value="m">متوسط</option><option value="l">كبير</option></select>
+          </label>
+          <label>اتجاه العرض
+            <select id="vPersp" class="st-select"><option value="students">من منظور الطلاب (السبورة في الأعلى)</option><option value="teacher">من منظور المعلم (السبورة في الأسفل)</option></select>
+          </label>
+          <label class="st-check-inline"><input type="checkbox" id="vColors" checked> لون لكل مجموعة</label>
+          <label class="st-check-inline"><input type="checkbox" id="vTags" checked> إظهار الوسوم والمستويات (للمعلم فقط)</label>
+        </div>
+        <h3>الانتقال</h3>
+        <div class="st-form">
+          <label>أقصى عدد في الدفعة الواحدة
+            <input type="number" id="vBatch" class="st-input" min="2" max="20" value="6">
+          </label>
+          <label>مدة مؤقت الانتقال (ثوانٍ)
+            <input type="number" id="vTimer" class="st-input" min="15" max="900" value="120">
+          </label>
+        </div>
+        <h3>مساحة الغرفة</h3>
+        <div class="st-form st-form-2">
+          <label>العرض<input type="number" id="roomW" class="st-input" min="10" max="60"></label>
+          <label>الطول<input type="number" id="roomH" class="st-input" min="8" max="50"></label>
+        </div>
+        <h3>تصدير</h3>
+        <div class="st-row2">
+          <button class="btn btn-ghost" type="button" id="exportPng">صورة PNG</button>
+          <button class="btn btn-ghost" type="button" id="exportPdf">طباعة / PDF</button>
+        </div>
+        <p class="st-hint">التصدير بنسخة الطلاب: الأسماء والمجموعات فقط، دون الملاحظات والتصنيفات.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- حفظ المخطط -->
+<div class="st-modal" id="saveModal" hidden>
+  <form class="st-dialog" id="saveForm">
+    <h2>حفظ المخطط</h2>
+    <label>الاسم<input type="text" id="saveName" class="st-input" maxlength="50" required></label>
+    <label>النوع
+      <select id="saveCat" class="st-select">
+        <option>المخطط الأساسي</option><option>مخطط الاختبار</option><option>مخطط المجموعات</option>
+        <option>مخطط المناقشة</option><option>مخطط المختبر</option><option>مخطط حصة معينة</option>
+      </select>
+    </label>
+    <label>ملاحظات<textarea id="saveNotes" class="st-input" rows="3"></textarea></label>
+    <div class="st-row2">
+      <button class="btn btn-primary" type="submit" id="saveConfirm">حفظ</button>
+      <button class="btn btn-ghost" type="button" id="saveAsNew">حفظ كنسخة جديدة</button>
+    </div>
+    <button class="btn btn-ghost st-wide" type="button" data-close>إلغاء</button>
+  </form>
+</div>
+
+<!-- المخططات المحفوظة -->
+<div class="st-modal" id="libModal" hidden>
+  <div class="st-dialog st-dialog-wide">
+    <div class="st-dialog-head">
+      <h2>المخططات المحفوظة</h2>
+      <label class="st-check-inline"><input type="checkbox" id="libThisClass" checked> هذا الصف فقط</label>
+      <button class="st-icon" type="button" data-close aria-label="إغلاق"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="st-lib-grid" id="savedGrid"></div>
+  </div>
+</div>
+
+<!-- المقارنة -->
+<div class="st-modal" id="cmpModal" hidden>
+  <div class="st-dialog st-dialog-wide">
+    <div class="st-dialog-head">
+      <h2>قبل وبعد</h2>
+      <span class="st-hint" id="cmpStats"></span>
+      <button class="st-icon" type="button" data-close aria-label="إغلاق"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="st-cmp">
+      <figure><figcaption>قبل</figcaption><div id="cmpBefore"></div></figure>
+      <figure><figcaption>بعد</figcaption><div id="cmpAfter"></div></figure>
+    </div>
+  </div>
+</div>
+
+<!-- رسالة المحطات -->
+<div class="st-modal" id="stationMsg" hidden>
+  <div class="st-dialog st-announce">
+    <div class="st-announce-title" id="stationMsgTitle">انتهى وقت الجولة</div>
+    <ul class="st-announce-list" id="stationMsgList"></ul>
+    <button class="btn btn-primary btn-lg st-wide" type="button" id="stationNext">ابدأ الجولة التالية</button>
+    <button class="btn btn-ghost st-wide" type="button" data-close>إغلاق</button>
+  </div>
+</div>
+
+<!-- شاشة الطلاب -->
+<div class="st-student" id="studentView" hidden>
+  <div class="st-sv-head">
+    <div>
+      <div class="st-sv-title" id="svTitle"></div>
+      <div class="st-sv-sub" id="svSub"></div>
+    </div>
+    <div class="st-sv-timer" id="svTimer" hidden></div>
+    <button class="btn btn-ghost" type="button" id="svExit">خروج</button>
+  </div>
+  <div class="st-sv-body">
+    <div class="st-sv-room" id="svRoom"></div>
+    <div class="st-sv-info" id="svInfo" hidden>
+      <div class="st-sv-step" id="svStep"></div>
+      <div class="st-sv-chips" id="svChips"></div>
+      <div class="st-row2">
+        <button class="btn btn-ghost btn-lg" type="button" id="svPrev">السابق</button>
+        <button class="btn btn-primary btn-lg" type="button" id="svNext">التالي</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="printArea" aria-hidden="true"></div>
+
+<footer id="siteFooter" data-base=""></footer>
+<script src="assets/js/layout.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/classes-store.js"></script>
+<script src="assets/js/seating/templates.js"></script>
+<script src="assets/js/seating/engine.js"></script>
+<script src="assets/js/seating/transition.js"></script>
+<script src="assets/js/seating/render.js"></script>
+<script src="assets/js/seating/app.js"></script>
+</body>
+</html>

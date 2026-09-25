@@ -5,6 +5,7 @@
   const NAV = [
     { id: 'home', label: 'الرئيسية', href: 'index.html' },
     { id: 'tools', label: 'الأدوات', href: 'tools.html' },
+    { id: 'seating', label: 'مخطط الجلوس', href: 'seating.html' },
     { id: 'classes', label: 'صفوفي', href: 'classes.html' },
     { id: 'plans', label: 'الباقات', href: 'index.html#plans' },
     { id: 'about', label: 'من نحن', href: 'about.html' }
