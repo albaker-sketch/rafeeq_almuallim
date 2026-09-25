@@ -25,18 +25,33 @@
   }
 
   function tone(freq, duration, type, volume) {
+    play({ freq, dur: duration, type, vol: volume });
+  }
+
+  // نغمة واحدة بإعدادات مرنة: تغيّر في التردد، ومرشّح، وتوقيت مؤجل
+  function play(o) {
     const ac = audio();
     if (!ac) return;
+    const t = ac.currentTime + (o.at || 0);
     const osc = ac.createOscillator();
     const gain = ac.createGain();
-    osc.type = type || 'sine';
-    osc.frequency.value = freq;
-    const t = ac.currentTime;
-    gain.gain.setValueAtTime(volume ?? 0.2, t);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-    osc.connect(gain).connect(ac.destination);
+    osc.type = o.type || 'sine';
+    osc.frequency.setValueAtTime(o.freq, t);
+    if (o.endFreq) osc.frequency.exponentialRampToValueAtTime(o.endFreq, t + o.dur);
+    const vol = o.vol ?? 0.2;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(vol, t + (o.attack || 0.005));
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + o.dur);
+    let node = osc;
+    if (o.lowpass) {
+      const filter = ac.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = o.lowpass;
+      node = osc.connect(filter);
+    }
+    node.connect(gain).connect(ac.destination);
     osc.start(t);
-    osc.stop(t + duration);
+    osc.stop(t + o.dur + 0.05);
   }
 
   const sound = {
@@ -46,13 +61,38 @@
       if (!this.enabled) return;
       [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.35, 'triangle', 0.18), i * 110));
     },
-    alarm() {
-      if (!this.enabled) return;
-      for (let r = 0; r < 3; r++) {
-        setTimeout(() => { tone(880, 0.18, 'square', 0.12); setTimeout(() => tone(660, 0.25, 'square', 0.12), 200); }, r * 650);
-      }
-    },
+    alarm() { this.finish(); },
     beep() { if (this.enabled) tone(990, 0.12, 'sine', 0.15); },
+
+    // آخر 10 ثوانٍ: دقة ساعة مع نبض قلب يعلو تدريجيًا كلما اقترب الوقت
+    tension(secLeft) {
+      if (!this.enabled) return;
+      const k = Math.min(1, Math.max(0, (11 - secLeft) / 7)); // من 0 إلى 1
+      const hi = secLeft % 2 === 0;
+      play({ freq: hi ? 1500 : 1150, dur: 0.06, type: 'triangle', vol: 0.12 + k * 0.1 });
+      play({ freq: 190, endFreq: 70, dur: 0.16, type: 'sine', vol: 0.35 + k * 0.3, at: 0.02 });
+      play({ freq: 170, endFreq: 60, dur: 0.14, type: 'sine', vol: 0.25 + k * 0.25, at: 0.24 });
+    },
+
+    // آخر 3 ثوانٍ: نبضتان حادتان متصاعدتان في كل ثانية
+    urgent(secLeft) {
+      if (!this.enabled) return;
+      const f = { 3: 880, 2: 1047, 1: 1245 }[secLeft] || 880;
+      play({ freq: f, dur: 0.14, type: 'sawtooth', vol: 0.16, lowpass: 3200 });
+      play({ freq: f, dur: 0.14, type: 'sawtooth', vol: 0.16, lowpass: 3200, at: 0.22 });
+      play({ freq: 150, endFreq: 55, dur: 0.18, type: 'sine', vol: 0.6 });
+    },
+
+    // انتهاء الوقت: بوق هابط ثم جرس
+    finish() {
+      if (!this.enabled) return;
+      [[392, 0], [330, 0.28], [262, 0.56]].forEach(([f, at], i) => {
+        play({ freq: f, dur: i === 2 ? 1.1 : 0.26, type: 'sawtooth', vol: 0.22, lowpass: 1800, at, attack: 0.02 });
+        play({ freq: f / 2, dur: i === 2 ? 1.1 : 0.26, type: 'square', vol: 0.08, lowpass: 900, at, attack: 0.02 });
+      });
+      [1568, 2093].forEach((f, i) => play({ freq: f, dur: 1.8, type: 'sine', vol: 0.12, at: 1.75 + i * 0.05 }));
+    },
+
     toggle() { this.enabled = !this.enabled; store.set('sound', this.enabled); return this.enabled; }
   };
 

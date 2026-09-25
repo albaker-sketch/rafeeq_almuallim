@@ -98,12 +98,90 @@
   .stage.pseudo-full .time { font-size: min(19vw, 15vh); }
 
   .stage.is-done .time { color: var(--danger); animation: blink 1s steps(2, start) infinite; }
+  .time { transition: color .2s; }
   @keyframes blink { to { opacity: .35; } }
 
   .state-text { color: var(--muted); font-size: 1rem; }
 
-  .controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-  .controls .btn { min-width: 150px; font-size: 1.2rem; padding: 14px 28px; }
+  .stage.is-urgent { --ring: var(--danger); }
+  .stage.is-urgent .time { color: var(--danger); animation: throb 1s ease-out infinite; }
+  @keyframes throb { 0% { transform: scale(1.08); } 40% { transform: scale(1); } }
+
+  /* أزرار التحكم بالرموز */
+  .controls { display: flex; gap: 14px; align-items: center; justify-content: center; flex-wrap: wrap; }
+
+  .ctrl {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    transition: background .15s, transform .1s, opacity .15s;
+  }
+  .ctrl svg { width: 28px; height: 28px; }
+  .ctrl:hover:not([disabled]) { background: var(--surface-2); }
+  .ctrl:active:not([disabled]) { transform: scale(.94); }
+  .ctrl[disabled] { opacity: .3; cursor: not-allowed; }
+
+  .ctrl.is-main {
+    width: 88px;
+    height: 88px;
+    background: var(--brand);
+    border-color: var(--brand);
+    color: var(--on-brand);
+  }
+  .ctrl.is-main svg { width: 38px; height: 38px; }
+  .ctrl.is-main:hover:not([disabled]) { background: var(--brand-deep); }
+  .ctrl.is-stop:hover:not([disabled]) { color: var(--danger); }
+
+  /* إضافة وقت */
+  .add-time {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 8px 6px 6px;
+  }
+  .add-time .lbl { font-weight: 600; font-size: .95rem; padding-inline: 10px 2px; color: var(--muted); }
+  .add-time input {
+    width: 76px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 6px 8px;
+    border-radius: 999px;
+    background: var(--surface);
+    font-variant-numeric: tabular-nums;
+  }
+  .unit {
+    display: inline-flex;
+    background: var(--surface-2);
+    border-radius: 999px;
+    padding: 3px;
+  }
+  .unit button {
+    font: inherit;
+    font-size: .9rem;
+    font-weight: 600;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    padding: 5px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .unit button[aria-pressed="true"] { background: var(--surface); color: var(--brand); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .add-time .btn { padding: 8px 18px; }
+  .add-flash { animation: flash .6s ease-out; }
+  @keyframes flash { from { color: var(--brand); transform: scale(1.06); } }
 
   /* اللوحة الجانبية */
   .side { display: flex; flex-direction: column; gap: 16px; }
@@ -189,12 +267,34 @@
         </div>
       </div>
 
-      <div class="controls">
-        <button class="btn btn-primary" type="button" id="startBtn">ابدأ</button>
-        <button class="btn btn-ghost" type="button" id="resetBtn">إعادة</button>
-        <button class="btn btn-ghost" type="button" id="plusBtn">+1 دقيقة</button>
+      <div class="controls" role="group" aria-label="التحكم بالمؤقت">
+        <button class="ctrl is-main" type="button" id="playBtn" title="تشغيل (مسافة)" aria-label="تشغيل">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
+        </button>
+        <button class="ctrl" type="button" id="pauseBtn" title="إيقاف مؤقت (مسافة)" aria-label="إيقاف مؤقت">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>
+        </button>
+        <button class="ctrl" type="button" id="restartBtn" title="إعادة من البداية (R)" aria-label="إعادة من البداية">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3 4v5h5"/></svg>
+        </button>
+        <button class="ctrl is-stop" type="button" id="stopBtn" title="إيقاف (S)" aria-label="إيقاف">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+        </button>
       </div>
-      <p class="kbd-hint">اختصار: <kbd>مسافة</kbd> تشغيل وإيقاف، <kbd>R</kbd> إعادة، <kbd>F</kbd> ملء الشاشة</p>
+
+      <form class="add-time" id="addForm" aria-label="إضافة وقت">
+        <span class="lbl">إضافة وقت</span>
+        <input type="number" id="addAmount" min="1" max="180" value="30" inputmode="numeric" aria-label="مقدار الوقت المضاف">
+        <span class="unit" role="group" aria-label="الوحدة">
+          <button type="button" data-unit="sec" aria-pressed="true">ثانية</button>
+          <button type="button" data-unit="min" aria-pressed="false">دقيقة</button>
+        </span>
+        <button class="btn btn-primary" type="submit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          إضافة
+        </button>
+      </form>
+      <p class="kbd-hint">اختصار: <kbd>مسافة</kbd> تشغيل وإيقاف مؤقت، <kbd>R</kbd> إعادة، <kbd>S</kbd> إيقاف، <kbd>F</kbd> ملء الشاشة</p>
     </section>
 
     <aside class="side">
@@ -241,19 +341,23 @@
   const el = id => document.getElementById(id);
 
   const PRESETS = [30, 60, 120, 180, 300, 600, 900, 1200, 1800];
-  const WARN_AT = 10; // ثوانٍ: يتحول اللون للذهبي وتبدأ نغمات العد
+  const WARN_AT = 10;   // آخر 10 ثوانٍ: لون ذهبي وصوت دقات متوترة
+  const URGENT_AT = 3;  // آخر 3 ثوانٍ: لون أحمر وصوت أشد
 
   const ring = el('progress');
   const CIRC = 2 * Math.PI * 88;
   ring.style.strokeDasharray = CIRC;
 
-  let total = store.get('timer:total', 180);
+  let baseTotal = store.get('timer:total', 180); // المدة المختارة
+  let total = baseTotal;                          // مدة الجولة الحالية (تزيد عند إضافة وقت)
   let remainingMs = total * 1000;
   let running = false;
+  let finished = false;
   let endAt = 0;
   let raf = 0;
   let lastWholeSec = null;
   let wakeLock = null;
+  let addUnit = store.get('timer:addUnit', 'sec');
 
   function fmt(sec) {
     const s = Math.max(0, Math.ceil(sec));
@@ -264,41 +368,65 @@
 
   function label(sec) {
     if (sec < 60) return sec + ' ث';
-    const m = sec / 60;
-    return m + ' د';
+    return sec / 60 + ' د';
   }
 
   function renderPresets() {
     el('presets').innerHTML = PRESETS.map(s =>
-      `<button class="preset" type="button" data-sec="${s}" aria-pressed="${s === total}">${label(s)}</button>`
+      `<button class="preset" type="button" data-sec="${s}" aria-pressed="${s === baseTotal}">${label(s)}</button>`
     ).join('');
+  }
+
+  function state() {
+    if (running) return 'running';
+    if (finished) return 'done';
+    if (remainingMs < total * 1000 || total !== baseTotal) return 'paused';
+    return 'idle';
   }
 
   function render() {
     const sec = remainingMs / 1000;
+    const st = state();
     el('time').textContent = fmt(sec);
     const frac = total > 0 ? Math.max(0, Math.min(1, remainingMs / (total * 1000))) : 0;
     ring.style.strokeDashoffset = CIRC * (1 - frac);
+
     const stage = el('stage');
-    const done = remainingMs <= 0 && total > 0 && !running && lastWholeSec === 0;
-    stage.classList.toggle('is-done', done);
-    stage.classList.toggle('is-warn', !done && running && sec <= WARN_AT);
-    el('stateText').textContent = done ? 'انتهى الوقت' : running ? 'جارٍ' : (remainingMs < total * 1000 ? 'متوقف مؤقتًا' : 'جاهز');
-    el('startBtn').textContent = running ? 'إيقاف مؤقت' : (remainingMs < total * 1000 && remainingMs > 0 ? 'استئناف' : 'ابدأ');
-    document.title = running ? fmt(sec) + ' · مؤقت الأنشطة' : 'مؤقت الأنشطة';
+    const whole = Math.ceil(sec);
+    stage.classList.toggle('is-done', st === 'done');
+    stage.classList.toggle('is-urgent', st === 'running' && whole <= URGENT_AT);
+    stage.classList.toggle('is-warn', st === 'running' && whole <= WARN_AT && whole > URGENT_AT);
+    el('stateText').textContent = { running: 'جارٍ', done: 'انتهى الوقت', paused: 'متوقف مؤقتًا', idle: 'جاهز' }[st];
+
+    // تفعيل الأزرار حسب الحالة
+    const play = el('playBtn');
+    play.disabled = st === 'running';
+    const playLabel = st === 'paused' ? 'استئناف' : st === 'done' ? 'تشغيل من جديد' : 'تشغيل';
+    play.title = playLabel + ' (مسافة)';
+    play.setAttribute('aria-label', playLabel);
+    el('pauseBtn').disabled = st !== 'running';
+    el('stopBtn').disabled = st === 'idle';
+    el('restartBtn').disabled = st === 'idle';
+
+    document.title = st === 'running' ? fmt(sec) + ' · مؤقت الأنشطة' : 'مؤقت الأنشطة';
+  }
+
+  function onSecond(whole) {
+    if (whole > URGENT_AT && whole <= WARN_AT) sound.tension(whole);
+    else if (whole > 0 && whole <= URGENT_AT) sound.urgent(whole);
   }
 
   function loop() {
     remainingMs = Math.max(0, endAt - performance.now());
     const whole = Math.ceil(remainingMs / 1000);
     if (whole !== lastWholeSec) {
-      if (whole > 0 && whole <= 3) sound.beep();
       lastWholeSec = whole;
+      onSecond(whole);
     }
     if (remainingMs <= 0) {
       running = false;
-      lastWholeSec = 0;
-      sound.alarm();
+      finished = true;
+      sound.finish();
       releaseWake();
       render();
       return;
@@ -307,51 +435,82 @@
     raf = requestAnimationFrame(loop);
   }
 
-  function start() {
+  function play() {
     if (running) return;
-    if (remainingMs <= 0) remainingMs = total * 1000;
-    if (remainingMs <= 0) return;
+    if (finished || remainingMs <= 0) { restart(); return; }
     running = true;
-    lastWholeSec = null;
+    finished = false;
+    // لا نعيد صوت الثانية الحالية عند الاستئناف
+    lastWholeSec = Math.ceil(remainingMs / 1000);
     endAt = performance.now() + remainingMs;
     requestWake();
+    cancelAnimationFrame(raf);
     raf = requestAnimationFrame(loop);
+    render();
   }
 
   function pause() {
+    if (!running) return;
+    remainingMs = Math.max(0, endAt - performance.now());
     running = false;
     cancelAnimationFrame(raf);
     releaseWake();
     render();
   }
 
-  function reset() {
-    pause();
-    lastWholeSec = null;
+  // إيقاف: ينهي الجولة ويعيد المؤقت إلى المدة المختارة دون تشغيل
+  function stop() {
+    running = false;
+    finished = false;
+    cancelAnimationFrame(raf);
+    releaseWake();
+    total = baseTotal;
     remainingMs = total * 1000;
+    lastWholeSec = null;
     render();
+  }
+
+  // إعادة: يبدأ الجولة من أولها مباشرة
+  function restart() {
+    stop();
+    play();
   }
 
   function setTotal(sec) {
-    total = Math.max(1, Math.min(180 * 60, Math.round(sec)));
-    store.set('timer:total', total);
-    el('minInput').value = Math.floor(total / 60);
-    el('secInput').value = total % 60;
+    baseTotal = Math.max(1, Math.min(180 * 60, Math.round(sec)));
+    store.set('timer:total', baseTotal);
+    el('minInput').value = Math.floor(baseTotal / 60);
+    el('secInput').value = baseTotal % 60;
     renderPresets();
-    reset();
+    stop();
   }
 
-  function addMinute() {
+  function addTime(sec) {
+    if (!(sec > 0)) return;
+    const ms = sec * 1000;
     if (running) {
-      endAt += 60000;
-      total += 60;
+      endAt += ms;
+      total += sec;
+    } else if (finished) {
+      // بعد انتهاء الوقت: نبدأ جولة إضافية بالمدة المضافة مباشرة
+      finished = false;
+      total = sec;
+      remainingMs = ms;
+      play();
     } else {
-      remainingMs += 60000;
+      remainingMs += ms;
       total = Math.max(total, Math.ceil(remainingMs / 1000));
-      lastWholeSec = null;
     }
-    renderPresets();
+    lastWholeSec = null;
     render();
+    const t = el('time');
+    t.classList.remove('add-flash');
+    void t.offsetWidth;
+    t.classList.add('add-flash');
+  }
+
+  function syncUnit() {
+    document.querySelectorAll('.unit button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.unit === addUnit)));
   }
 
   // إبقاء الشاشة مضاءة أثناء العد
@@ -370,9 +529,22 @@
   }
 
   // الأحداث
-  el('startBtn').addEventListener('click', () => running ? pause() : start());
-  el('resetBtn').addEventListener('click', reset);
-  el('plusBtn').addEventListener('click', addMinute);
+  el('playBtn').addEventListener('click', play);
+  el('pauseBtn').addEventListener('click', pause);
+  el('stopBtn').addEventListener('click', stop);
+  el('restartBtn').addEventListener('click', restart);
+
+  document.querySelectorAll('.unit button').forEach(b => b.addEventListener('click', () => {
+    addUnit = b.dataset.unit;
+    store.set('timer:addUnit', addUnit);
+    syncUnit();
+  }));
+  el('addForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const n = Math.min(180, Math.max(0, Math.round(Number(el('addAmount').value) || 0)));
+    if (!n) { el('addAmount').focus(); return; }
+    addTime(addUnit === 'min' ? n * 60 : n);
+  });
   el('presets').addEventListener('click', e => {
     const b = e.target.closest('.preset');
     if (b) setTotal(Number(b.dataset.sec));
@@ -407,9 +579,11 @@
     if (e.code === 'Space' && document.activeElement.tagName === 'BUTTON') document.activeElement.blur();
     if (e.code === 'Space') {
       e.preventDefault();
-      running ? pause() : start();
+      running ? pause() : play();
     } else if (e.key === 'r' || e.key === 'R' || e.key === 'ق') {
-      reset();
+      restart();
+    } else if (e.key === 's' || e.key === 'S' || e.key === 'س') {
+      stop();
     } else if (e.key === 'f' || e.key === 'F' || e.key === 'ب') {
       toggleFullscreen(el('stage'));
     } else if (e.key === 'Escape') {
@@ -422,8 +596,9 @@
   });
 
   setActivity(store.get('timer:activity', 'نشاط جماعي'));
-  el('minInput').value = Math.floor(total / 60);
-  el('secInput').value = total % 60;
+  el('minInput').value = Math.floor(baseTotal / 60);
+  el('secInput').value = baseTotal % 60;
+  syncUnit();
   renderPresets();
   render();
 })();

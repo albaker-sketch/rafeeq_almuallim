@@ -80,6 +80,75 @@
 
   .spin-btn { min-width: 220px; font-size: 1.35rem; padding: 16px 40px; }
 
+  /* التبديل بين العجلة والقرعة */
+  .mode-switch {
+    display: inline-flex;
+    background: var(--surface-2);
+    border-radius: 999px;
+    padding: 4px;
+  }
+  .mode-switch button {
+    font: inherit;
+    font-weight: 600;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    padding: 8px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mode-switch button svg { width: 18px; height: 18px; }
+  .mode-switch button[aria-pressed="true"] { background: var(--surface); color: var(--brand); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+  /* وضع القرعة: بطاقة تعرض الاسم كاملًا */
+  .draw-box {
+    width: min(100%, 760px);
+    min-height: 340px;
+    display: grid;
+    place-items: center;
+  }
+  .stage:fullscreen .draw-box,
+  .stage.pseudo-full .draw-box { width: min(94vw, 1200px); min-height: 55vh; }
+
+  .draw-card {
+    width: 100%;
+    min-height: 300px;
+    border-radius: 24px;
+    background: #0F3B2E;
+    border: 10px solid #D9CBB0;
+    color: #F2F6F3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 32px 24px;
+    text-align: center;
+    position: relative;
+  }
+  .stage:fullscreen .draw-card,
+  .stage.pseudo-full .draw-card { min-height: 55vh; }
+
+  .draw-label { color: #A9C7BB; font-size: 1.1rem; min-height: 1.5em; }
+  .draw-name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(2.6rem, 7vw, 5.6rem);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+  .stage:fullscreen .draw-name,
+  .stage.pseudo-full .draw-name { font-size: clamp(3rem, 8vw, 8rem); }
+  .draw-name.is-idle { color: #6F9A8A; font-size: clamp(2rem, 5vw, 3.4rem); }
+  .draw-name.is-rolling { color: #E6EFEA; }
+  .draw-card.is-winner { border-color: #C0913F; }
+  .draw-card.is-winner .draw-name { color: #F4D28F; animation: pop .45s cubic-bezier(.2, 1.4, .4, 1); }
+  .draw-sub { color: #A9C7BB; font-size: .95rem; font-variant-numeric: tabular-nums; }
+
   /* بطاقة النتيجة */
   .result {
     position: absolute;
@@ -225,7 +294,26 @@
       </div>
 
       <p class="stage-class" id="stageClass" hidden></p>
-      <div class="wheel-box">
+      <div class="mode-switch" role="group" aria-label="طريقة الاختيار">
+        <button type="button" data-mode="wheel" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6.4 6.4M12 12 5.6 18.4M12 12H3"/></svg>
+          العجلة
+        </button>
+        <button type="button" data-mode="draw" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h10M7 14h6"/></svg>
+          القرعة
+        </button>
+      </div>
+
+      <div class="draw-box" id="drawBox" hidden>
+        <div class="draw-card" id="drawCard">
+          <div class="draw-label" id="drawLabel"></div>
+          <div class="draw-name is-idle" id="drawName">اضغط «اسحب اسمًا»</div>
+          <div class="draw-sub" id="drawSub"></div>
+        </div>
+      </div>
+
+      <div class="wheel-box" id="wheelBox">
         <svg class="pointer" id="pointer" viewBox="0 0 44 54" aria-hidden="true"><path d="M22 52 4 14a18 18 0 1 1 36 0z" fill="#C0913F"/><circle cx="22" cy="18" r="7" fill="#fff"/></svg>
         <canvas id="wheel" aria-label="عجلة أسماء الطلاب، اضغط لتدويرها"></canvas>
       </div>
@@ -234,9 +322,9 @@
 
       <button class="btn btn-primary spin-btn" type="button" id="spinBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
-        أدِر العجلة
+        <span id="spinLabel">أدِر العجلة</span>
       </button>
-      <p class="kbd-hint">اختصار: <kbd>مسافة</kbd> للتدوير، <kbd>F</kbd> لملء الشاشة</p>
+      <p class="kbd-hint">اختصار: <kbd>مسافة</kbd> للاختيار، <kbd>F</kbd> لملء الشاشة</p>
 
       <div class="result" id="result" hidden>
         <div class="result-card" role="dialog" aria-live="assertive" aria-labelledby="resultName">
@@ -261,6 +349,14 @@
         <div class="row">
           <button class="btn btn-ghost" type="button" id="shuffleBtn">خلط الترتيب</button>
           <button class="btn btn-ghost" type="button" id="clearBtn">مسح القائمة</button>
+        </div>
+        <div id="labelModeWrap" style="margin-top:14px">
+          <label class="field-label" for="labelMode">الاسم الظاهر على العجلة</label>
+          <select id="labelMode" class="class-select">
+            <option value="2">الاسم الأول والثاني</option>
+            <option value="1">الاسم الأول فقط</option>
+            <option value="all">الاسم كاملًا</option>
+          </select>
         </div>
         <label class="check">
           <input type="checkbox" id="removePicked" checked>
@@ -325,6 +421,7 @@
     el('stageClass').hidden = !isClass;
     el('stageClass').textContent = isClass ? Classes.label(cls) : '';
     picked = store.get(pickedKey(), []);
+    if (typeof resetDrawCard === 'function') resetDrawCard();
     renderPicked();
     draw();
   }
@@ -357,6 +454,37 @@
     return left;
   }
 
+  // تقسيم الاسم إلى أجزاء مع دمج «عبد/أبو/بن» مع ما بعدها: «عبد الرحمن جاسم» = [عبد الرحمن، جاسم]
+  function nameParts(full) {
+    const t = full.split(/\s+/).filter(Boolean);
+    const parts = [];
+    for (let i = 0; i < t.length; i++) {
+      let w = t[i];
+      while (/^(عبد|ابو|أبو|بو|بن|بنت|ابن|آل)$/.test(w.split(' ').pop()) && t[i + 1]) w += ' ' + t[++i];
+      parts.push(w);
+    }
+    return parts;
+  }
+
+  // أسماء العجلة المختصرة، مع إطالة الاسم تلقائيًا إن تشابه اسمان مختصران
+  function wheelLabels(names) {
+    const mode = el('labelMode').value;
+    const parts = names.map(nameParts);
+    if (mode === 'all') return names.slice();
+    const level = parts.map(() => mode === '1' ? 1 : 2);
+    for (let round = 0; round < 6; round++) {
+      const labels = parts.map((p, i) => p.slice(0, level[i]).join(' '));
+      const seen = new Map();
+      labels.forEach((l, i) => seen.set(l, (seen.get(l) || []).concat(i)));
+      let changed = false;
+      seen.forEach(idx => {
+        if (idx.length > 1) idx.forEach(i => { if (level[i] < parts[i].length) { level[i]++; changed = true; } });
+      });
+      if (!changed) return labels;
+    }
+    return parts.map((p, i) => p.slice(0, level[i]).join(' '));
+  }
+
   function colorFor(i, n) {
     let c = COLORS[i % COLORS.length];
     // تجنب تطابق لون أول شريحة وآخر شريحة
@@ -366,6 +494,20 @@
 
   function fontStack() {
     return '"Readex Pro", Tahoma, sans-serif';
+  }
+
+  // تحديث العداد والرسائل وحالة زر الاختيار
+  function updateStatus(n) {
+    el('count').textContent = el('removePicked').checked && picked.length
+      ? `${n} من ${allNames().length}`
+      : `${allNames().length} طالب`;
+    const tooFew = n < 2;
+    el('stageMsg').hidden = !tooFew;
+    el('stageMsg').textContent = allNames().length >= 2 && tooFew
+      ? 'شارك جميع الطلاب. اضغط «إعادة الجميع للعجلة» لبدء جولة جديدة.'
+      : 'أضف اسمين على الأقل في قائمة الطلاب لتدوير العجلة.';
+    el('spinBtn').disabled = tooFew || spinning;
+    if (mode === 'draw' && !spinning && !drawWinner) renderDrawIdle(n);
   }
 
   function draw() {
@@ -380,6 +522,9 @@
     const r = c - 6;
     const names = pool();
     const n = names.length;
+    updateStatus(n);
+    if (size < 40) return; // العجلة مخفية (وضع القرعة)
+    const labels = wheelLabels(names);
     const styles = getComputedStyle(document.documentElement);
     ctx.clearRect(0, 0, size, size);
 
@@ -422,14 +567,20 @@
       const flip = norm > Math.PI / 2 && norm < Math.PI * 1.5;
       ctx.rotate(flip ? mid + Math.PI : mid);
       ctx.fillStyle = LIGHT.has(color) ? '#2B2410' : '#FFFFFF';
-      ctx.font = `600 ${fontSize}px ${fontStack()}`;
       ctx.textAlign = flip ? 'left' : 'right';
       ctx.textBaseline = 'middle';
       ctx.direction = 'rtl';
-      let label = names[i];
-      const maxW = r * 0.68;
+      let label = labels[i];
+      const maxW = r * 0.8 - 16;
+      // تصغير الخط للأسماء الطويلة أولًا، ثم الاختصار إن بقي الاسم أطول من الشريحة
+      let fs = fontSize;
+      ctx.font = `600 ${fs}px ${fontStack()}`;
+      while (ctx.measureText(label).width > maxW && fs > fontSize * 0.62) {
+        fs -= 1;
+        ctx.font = `600 ${fs}px ${fontStack()}`;
+      }
       while (ctx.measureText(label).width > maxW && label.length > 2) label = label.slice(0, -1);
-      if (label !== names[i]) label += '…';
+      if (label !== labels[i]) label += '…';
       ctx.fillText(label, flip ? -(r - 16) : r - 16, 0);
       ctx.restore();
     }
@@ -443,15 +594,6 @@
     ctx.strokeStyle = '#C0913F';
     ctx.stroke();
 
-    el('count').textContent = el('removePicked').checked && picked.length
-      ? `${n} من ${allNames().length}`
-      : `${allNames().length} طالب`;
-    const tooFew = n < 2;
-    el('stageMsg').hidden = !tooFew;
-    el('stageMsg').textContent = allNames().length >= 2 && tooFew
-      ? 'شارك جميع الطلاب. اضغط «إعادة الجميع للعجلة» لبدء جولة جديدة.'
-      : 'أضف اسمين على الأقل في قائمة الطلاب لتدوير العجلة.';
-    el('spinBtn').disabled = tooFew || spinning;
   }
 
   // مؤشر الشريحة الواقعة تحت السهم العلوي
@@ -470,6 +612,101 @@
     } catch (e) {
       return Math.floor(Math.random() * max);
     }
+  }
+
+  // ---------- التبديل بين العجلة والقرعة ----------
+  let mode = store.get('wheel:mode', 'wheel');
+  let drawWinner = false;
+
+  function setMode(m) {
+    if (spinning) return;
+    mode = m === 'draw' ? 'draw' : 'wheel';
+    store.set('wheel:mode', mode);
+    document.querySelectorAll('.mode-switch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+    el('wheelBox').hidden = mode !== 'wheel';
+    el('drawBox').hidden = mode !== 'draw';
+    el('labelModeWrap').hidden = mode !== 'wheel';
+    el('spinLabel').textContent = mode === 'wheel' ? 'أدِر العجلة' : 'اسحب اسمًا';
+    el('result').hidden = true;
+    drawWinner = false;
+    el('drawCard').classList.remove('is-winner');
+    draw();
+  }
+
+  function studentsCount(n) {
+    if (n === 1) return 'طالب واحد';
+    if (n === 2) return 'طالبان';
+    if (n <= 10) return n + ' طلاب';
+    return n + ' طالبًا';
+  }
+
+  function renderDrawIdle(n) {
+    const nameEl = el('drawName');
+    nameEl.className = 'draw-name is-idle';
+    nameEl.textContent = n >= 2 ? 'من سيشارك الآن؟' : 'لا توجد أسماء كافية';
+    el('drawLabel').textContent = '';
+    el('drawSub').textContent = n >= 2 ? `${studentsCount(n)} في القرعة` : '';
+  }
+
+  function spinDraw() {
+    const names = pool();
+    const n = names.length;
+    if (spinning || n < 2) return;
+    spinning = true;
+    drawWinner = false;
+    el('spinBtn').disabled = true;
+    const card = el('drawCard');
+    const nameEl = el('drawName');
+    card.classList.remove('is-winner');
+    nameEl.className = 'draw-name is-rolling';
+    el('drawLabel').textContent = 'جارٍ السحب…';
+    el('drawSub').textContent = '';
+
+    const target = randomInt(n);
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const steps = reduced ? 1 : 26 + randomInt(6);
+    let step = 0;
+    let last = -1;
+
+    function next() {
+      step++;
+      let idx;
+      if (step >= steps) {
+        idx = target;
+      } else {
+        do { idx = randomInt(n); } while (idx === last && n > 1);
+      }
+      last = idx;
+      nameEl.textContent = names[idx];
+      sound.tick();
+      if (step < steps) {
+        // يبدأ سريعًا ثم يتباطأ تدريجيًا قبل التوقف
+        const p = step / steps;
+        setTimeout(next, 45 + Math.pow(p, 3) * 480);
+      } else {
+        spinning = false;
+        drawWinner = true;
+        card.classList.add('is-winner');
+        nameEl.className = 'draw-name';
+        void nameEl.offsetWidth;
+        el('drawLabel').textContent = 'الطالب المشارك';
+        recordPick(names[target]);
+        sound.win();
+        const left = pool().length;
+        el('drawSub').textContent = el('removePicked').checked ? `بقي ${studentsCount(left)} في القرعة` : '';
+        el('spinBtn').disabled = left < 2;
+      }
+    }
+    next();
+  }
+
+  function resetDrawCard() {
+    drawWinner = false;
+    el('drawCard').classList.remove('is-winner');
+  }
+
+  function choose() {
+    if (mode === 'draw') spinDraw(); else spin();
   }
 
   function spin() {
@@ -522,10 +759,15 @@
     requestAnimationFrame(frame);
   }
 
-  function finish(name) {
+  function recordPick(name) {
     lastPick = name;
     picked.push(name);
     store.set(pickedKey(), picked);
+    renderPicked();
+  }
+
+  function finish(name) {
+    recordPick(name);
     el('resultName').textContent = name;
     el('result').hidden = false;
     sound.win();
@@ -549,8 +791,11 @@
   }
 
   // الأحداث
-  el('spinBtn').addEventListener('click', spin);
+  el('spinBtn').addEventListener('click', choose);
   canvas.addEventListener('click', spin);
+  document.querySelectorAll('.mode-switch button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  el('labelMode').value = store.get('wheel:labelMode', '2');
+  el('labelMode').addEventListener('change', e => { store.set('wheel:labelMode', e.target.value); draw(); });
   el('againBtn').addEventListener('click', () => { closeResult(); spin(); });
   el('closeBtn').addEventListener('click', closeResult);
 
@@ -587,6 +832,7 @@
   });
 
   el('resetPickedBtn').addEventListener('click', () => {
+    resetDrawCard();
     picked = [];
     store.set(pickedKey(), picked);
     renderPicked();
@@ -611,7 +857,7 @@
     if (e.code === 'Space' || (e.key === 'Enter' && document.activeElement === document.body)) {
       e.preventDefault();
       if (!el('result').hidden) closeResult();
-      spin();
+      choose();
     } else if (e.key === 'f' || e.key === 'F' || e.key === 'ب') {
       toggleFullscreen(el('stage'));
     } else if (e.key === 'Escape') {
@@ -627,6 +873,7 @@
   syncSoundBtn();
   const startSource = initClassSelect();
   loadSource(startSource);
+  setMode(mode);
   if (!Classes.all().length) {
     el('classNote').hidden = false;
     el('classNote').innerHTML = 'ارفع أسماء طلابك مرة واحدة من <a href="../classes.html">صفوفي</a> لتظهر هنا تلقائيًا عند اختيار الصف.';
